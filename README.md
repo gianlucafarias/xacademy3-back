@@ -7,7 +7,7 @@ Este es el backend del **Portal Web para cursos y capacitaciones [Incubadora del
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/xacademy-2025/xacademy-backend.git
+git clone https://github.com/gianlucafarias/xacademy3-backend.git
 ```
 
 ### 2. Instalar dependencias
