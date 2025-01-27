@@ -1,0 +1,96 @@
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    lastname VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
+    birthday DATE,
+    phone VARCHAR(20),
+    address VARCHAR(255),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Courses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    quota INT NOT NULL,
+    startDate DATE NOT NULL,
+    endDate DATE NOT NULL,
+    hours INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Courses_Category (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    course_id INT,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Inscriptions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT,
+    student_id INT,
+    registrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Student (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    course_id INT NOT NULL,
+    qualification DECIMAL(5,2),
+    studentCondition ENUM('EN_CURSO', 'APROBADO', 'DESAPROBADO') DEFAULT 'EN_CURSO',
+    payment_status ENUM('PENDIENTE', 'PAGADO', 'ATRASADO') DEFAULT 'PENDIENTE',
+    certificate_id INT NULL,
+    attendance_id INT NULL,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Teacher (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    course_id INT NOT NULL,
+    specialty VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Assists (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT NOT NULL,
+    student_id INT NOT NULL,
+    attendanceDate DATE NOT NULL,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES Student(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Payment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT NOT NULL,
+    student_id INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    status ENUM('PENDIENTE', 'PAGADO', 'ATRASADO') DEFAULT 'PENDIENTE',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES Student(id) ON DELETE CASCADE
+);
+
+CREATE TABLE News (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    user_id INT NOT NULL,
+    description TEXT,
+    image VARCHAR(255),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+
