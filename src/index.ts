@@ -1,15 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import initializeDB from './config/dbConfig';
-
+import authRoutes from './routes/auth.routes';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
-app.get('/', (req, res) => {
-    res.send('API corriendo');
-});
+app.use('/api/auth', authRoutes);
+
 
 //Run server
 (async ()=>{

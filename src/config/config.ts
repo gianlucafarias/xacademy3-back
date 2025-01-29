@@ -1,4 +1,7 @@
 import { Dialect } from 'sequelize';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 interface DBConfig {
   database: string;
@@ -10,9 +13,9 @@ interface DBConfig {
 
 export const config: { db: DBConfig } = {
   db: {
-    database: 'xacademydb',
-    username: ' ',
-    password: ' ',
+    database: process.env.DB_DATABASE || 'xacademydb',
+    username: process.env.DB_USERNAME || ' ',
+    password: process.env.DB_PASSWORD || ' ',
     host: 'localhost',
     dialect: 'mysql'
   }
