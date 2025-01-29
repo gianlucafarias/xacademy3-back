@@ -73,16 +73,27 @@ export const register = async (req: Request, res: Response) => {
 
 
 export const resetPassword = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    if (!email || !password) {  
+    const { email, oldPassword, newPassword } = req.body;
+    if (!email || !oldPassword || !newPassword) {  
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
+
+    if(oldPassword === newPassword){
+        return res.status(400).json({ message: 'La nueva contraseña no puede ser igual a la anterior' });
+    }
+
     try {
         const user = await User.findOne({ where: { email } });
         if (!user) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
-        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const isPasswordCorrect = await bcrypt.compare(oldPassword, user.dataValues.password);
+        if (!isPasswordCorrect) {
+            return res.status(401).json({ message: 'Contraseña incorrecta' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
         await user.update({ password: hashedPassword });
         res.status(200).json({ message: 'Contraseña actualizada con éxito' });
     } catch (error) {
