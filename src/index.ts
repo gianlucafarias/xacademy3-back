@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import initializeDB from './config/dbConfig';
 
 dotenv.config();
 const app = express();
@@ -10,6 +11,10 @@ app.get('/', (req, res) => {
     res.send('API corriendo');
 });
 
-app.listen(PORT, () => {
-    console.log(`servidor corriendo en el puerto ${PORT}`);
-});
+//Run server
+(async ()=>{
+    await initializeDB();
+    app.listen(PORT, ()=>{
+        console.log(`Server running on port ${PORT}`);
+    });
+})();
