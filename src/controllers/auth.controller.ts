@@ -3,8 +3,19 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User';
 
+interface LoginRequest {
+    email: string;
+    password: string;
+}
+
+interface RegisterRequest {
+    name: string;
+    email: string;
+    password: string;
+}
+
 export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { email, password } = req.body as LoginRequest;
     if (!email || !password) {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
@@ -31,7 +42,7 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const register = async (req: Request, res: Response) => {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.body as RegisterRequest;
     if (!req.body.name || !req.body.email || !req.body.password) {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
