@@ -1,5 +1,5 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/dbConfig");
+import { DataTypes } from "sequelize";
+import { sequelize } from "../config/dbConfig";
 
 const User = sequelize.define(
   "User",
@@ -10,6 +10,10 @@ const User = sequelize.define(
       autoIncrement: true,
     },
     name: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    lastname: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
@@ -24,6 +28,7 @@ const User = sequelize.define(
     },
     role: {
       type: DataTypes.ENUM("ADMIN", "TEACHER", "STUDENT"),
+      defaultValue: "STUDENT",
       allowNull: false,
     },
     birthday: {
@@ -38,12 +43,12 @@ const User = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true, //PERMITE NULL
     },
-    createAt: {
+    createdAt: {
       type: DataTypes.DATE, //tIMESTAMP
       allowNull: false,
       defaultValue: DataTypes.NOW, //DEFAUL CURRENT_TIMESTAMP
     },
-    updateAt: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
