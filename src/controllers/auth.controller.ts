@@ -10,6 +10,7 @@ interface LoginRequest {
 
 interface RegisterRequest {
     name: string;
+    lastname: string;
     email: string;
     password: string;
 }
@@ -28,13 +29,13 @@ export const login = async (req: Request, res: Response) => {
         }
 
         // verificar contraseña
-        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        const isPasswordCorrect = await bcrypt.compare(password, user.dataValues.password);
         if (!isPasswordCorrect) {
             return res.status(401).json({ message: 'Contraseña incorrecta' });
         }
 
         // crear token
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user.dataValues.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
         res.status(200).json({ message: 'Inicio de sesión exitoso', token });
     } catch (error) {
         res.status(500).json({ message: 'Error al iniciar sesión', error });
@@ -42,8 +43,8 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const register = async (req: Request, res: Response) => {
-    const { name, email, password } = req.body as RegisterRequest;
-    if (!req.body.name || !req.body.email || !req.body.password) {
+    const { name, lastname, email, password } = req.body as RegisterRequest;
+    if (!req.body.name || !req.body.lastname || !req.body.email || !req.body.password) {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
     try {
@@ -58,10 +59,10 @@ export const register = async (req: Request, res: Response) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // crear usuario
-        const user = await User.create({ name, email, password: hashedPassword });
+        const user = await User.create({ name, lastname, email, password: hashedPassword });
 
         // crear token
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user.dataValues.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
         
         res.status(200).json({ message: 'Usuario creado con exito', token });
     } catch (error) {
@@ -69,3 +70,24 @@ export const register = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error al crear el usuario', error });
     }
 };
+
+
+export const resetPassword = async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    if (!email || !password) {  
+        return res.status(400).json({ message: 'Todos los campos son requeridos' });
+    }
+    try {
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await user.update({ password: hashedPassword });
+        res.status(200).json({ message: 'Contraseña actualizada con éxito' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al resetear la contraseña', error });
+    }
+};
+
+
