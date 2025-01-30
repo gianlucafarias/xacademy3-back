@@ -1,11 +1,18 @@
+CREATE DATABASE xacademydb;
+
+USE xacademydb;
+
 CREATE TABLE Users (
     id INT AUTO_INCREMENT PRIMARY KEY,
+
     name VARCHAR(100) NOT NULL,
     lastname VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255),
+    uuid VARCHAR(255),
     role ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
     birthday DATE,
+    dni INT,
     phone VARCHAR(20),
     address VARCHAR(255),
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
