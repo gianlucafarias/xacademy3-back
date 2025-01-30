@@ -10,7 +10,7 @@ CREATE TABLE Users (
     email VARCHAR(150) UNIQUE NOT NULL,
     password VARCHAR(255),
     uuid VARCHAR(255),
-    role ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
+    userRole ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
     birthday DATE,
     dni INT,
     phone VARCHAR(20),
