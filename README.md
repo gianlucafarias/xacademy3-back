@@ -19,6 +19,10 @@ npm install
 ### 3. Configurar variables de entorno
 
 PORT=
+JWT_SECRET=
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
 
 ### 4. Ejecutar el servidor
 
