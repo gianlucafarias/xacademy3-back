@@ -22,9 +22,18 @@ const User = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    dni: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      unique: true,
+    },
     password: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
+    },
+    uuid: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
     role: {
       type: DataTypes.ENUM("ADMIN", "TEACHER", "STUDENT"),
