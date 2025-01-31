@@ -101,4 +101,40 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 };
 
+export const refreshToken = async (req: Request, res: Response) => {
+    try {
+        const refreshToken = req.headers.authorization?.split(' ')[1];
+        
+        if (!refreshToken) {
+            return res.status(401).json({ message: 'Token no proporcionado' });
+        }
+
+        try {
+            // Verificar el token
+            const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET!) as { id: number };
+            
+            const user = await User.findByPk(decoded.id);
+            if (!user) {
+                return res.status(404).json({ message: 'Usuario no encontrado' });
+            }
+
+            const newAccessToken = jwt.sign(
+                { id: user.dataValues.id },
+                process.env.JWT_SECRET!,
+                { expiresIn: '1h' }
+            );
+
+            res.status(200).json({
+                message: 'Token refrescado exitosamente',
+                token: newAccessToken
+            });
+        } catch (error) {
+            return res.status(401).json({ message: 'Token de refresco inválido o expirado' });
+        }
+    } catch (error) {
+        console.error('Error al refrescar el token:', error);
+        res.status(500).json({ message: 'Error al refrescar el token', error });
+    }
+};
+
 
