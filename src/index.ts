@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import initializeDB from './config/dbConfig';
+import initializeDB from '../config/dbConfig';
 import authRoutes from './routes/auth.routes'; 
 import cors from 'cors';
 
@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3001;
 
 
 app.use(express.json());
-
+app.use(cors());
 
 app.use('/api/auth', authRoutes);
 
