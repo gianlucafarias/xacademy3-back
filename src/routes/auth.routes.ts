@@ -8,4 +8,5 @@ router.post('/register', register as RequestHandler);
 router.post('/reset-password', resetPassword as RequestHandler);
 router.post('/refresh-token', refreshToken as RequestHandler);
 
+
 export default router;
