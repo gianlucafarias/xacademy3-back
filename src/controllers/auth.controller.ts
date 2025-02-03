@@ -15,13 +15,28 @@ interface RegisterRequest {
     password: string;
 }
 
+const generateTokens = (userId: number) => {
+    const accessToken = jwt.sign(
+        { id: userId },
+        process.env.JWT_SECRET!,
+        { expiresIn: '1h' }
+    );
+    
+    const refreshToken = jwt.sign(
+        { id: userId },
+        process.env.JWT_SECRET!,
+        { expiresIn: '7d' }
+    );
+
+    return { accessToken, refreshToken };
+};
+
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body as LoginRequest;
     if (!email || !password) {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
     try {
-
         // verificar datos
         const user = await User.findOne({ where: { email } });
         if (!user) {
@@ -34,9 +49,13 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Contraseña incorrecta' });
         }
 
-        // crear token
-        const token = jwt.sign({ id: user.dataValues.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
-        res.status(200).json({ message: 'Inicio de sesión exitoso', token });
+        // crear tokens
+        const tokens = generateTokens(user.dataValues.id);
+        
+        res.status(200).json({
+            message: 'Inicio de sesión exitoso',
+            ...tokens
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error al iniciar sesión', error });
     }
@@ -48,7 +67,6 @@ export const register = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
     try {
-
         // verificar datos
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
@@ -61,16 +79,53 @@ export const register = async (req: Request, res: Response) => {
         // crear usuario
         const user = await User.create({ name, lastname, email, password: hashedPassword });
 
-        // crear token
-        const token = jwt.sign({ id: user.dataValues.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        // crear tokens
+        const tokens = generateTokens(user.dataValues.id);
         
-        res.status(200).json({ message: 'Usuario creado con exito', token });
+        res.status(200).json({
+            message: 'Usuario creado con éxito',
+            ...tokens
+        });
     } catch (error) {
         console.error('Error al crear el usuario', error);
         res.status(500).json({ message: 'Error al crear el usuario', error });
     }
 };
 
+export const refreshToken = async (req: Request, res: Response) => {
+    try {
+        // Obtener el refresh token del header
+        const refreshToken = req.headers.authorization?.split(' ')[1];
+        
+        if (!refreshToken) {
+            return res.status(401).json({ message: 'Refresh token no proporcionado' });
+        }
+
+        try {
+            // Verificar el refresh token
+            const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET!) as { id: number };
+            
+            // Buscar el usuario
+            const user = await User.findByPk(decoded.id);
+            if (!user) {
+                return res.status(404).json({ message: 'Usuario no encontrado' });
+            }
+
+            // Generar nuevos tokens
+            const tokens = generateTokens(user.dataValues.id);
+
+            res.status(200).json({
+                message: 'Token refrescado exitosamente',
+                ...tokens
+            });
+        } catch (error) {
+            return res.status(401).json({ message: 'Refresh token inválido o expirado' });
+        }
+    } catch (error) {
+        console.error('Error al refrescar el token:', error);
+        res.status(500).json({ message: 'Error al refrescar el token', error });
+    }
+};
 
 export const resetPassword = async (req: Request, res: Response) => {
     const { email, oldPassword, newPassword } = req.body;
