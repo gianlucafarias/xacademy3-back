@@ -24,7 +24,7 @@ const User = sequelize.define(
     },
     dni: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       unique: true,
     },
     password: {
