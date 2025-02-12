@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User';
+import { auth } from '../../config/firebase';
 
 interface LoginRequest {
     email: string;
@@ -37,24 +38,28 @@ export const login = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
     try {
-        // verificar datos
+        // Verificar datos en tu base de datos
         const user = await User.findOne({ where: { email } });
         if (!user) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        // verificar contraseña
+        // Verificar contraseña
         const isPasswordCorrect = await bcrypt.compare(password, user.dataValues.password);
         if (!isPasswordCorrect) {
             return res.status(401).json({ message: 'Contraseña incorrecta' });
         }
 
-        // crear tokens
+        // Generar un token personalizado de Firebase
+        const token = await auth.createCustomToken(user.dataValues.uid);
+
+        // Crear tokens JWT para tu aplicación
         const tokens = generateTokens(user.dataValues.id);
         
         res.status(200).json({
             message: 'Inicio de sesión exitoso',
-            ...tokens
+            token, // Token de Firebase
+            ...tokens // Tokens JWT
         });
     } catch (error) {
         res.status(500).json({ message: 'Error al iniciar sesión', error });
@@ -63,26 +68,37 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
     const { name, lastname, email, password } = req.body as RegisterRequest;
-    if (!req.body.name || !req.body.lastname || !req.body.email || !req.body.password) {
+    if (!name || !lastname || !email || !password) {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
     try {
-        // verificar datos
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
+        // Verificar si el usuario ya existe en Firebase
+        const existingUser  = await auth.getUserByEmail(email).catch(() => null);
+        if (existingUser ) {
             return res.status(400).json({ message: 'El usuario ya existe' });
         }
 
-        // hashear contraseña
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Crear usuario en Firebase
+        const userRecord = await auth.createUser ({
+            email,
+            password,
+            displayName: `${name} ${lastname}`,
+        });
 
-        // crear usuario
-        const user = await User.create({ name, lastname, email, password: hashedPassword });
+        // Almacenar el usuario en tu base de datos
+        const hashedPassword = await bcrypt.hash(password, 10); // Hashear la contraseña
+        const user = await User.create({
+            uid: userRecord.uid,
+            name,
+            lastname,
+            email,
+            password: hashedPassword, // Almacena la contraseña hasheada
+        });
 
-        // crear tokens
+        // Generar tokens
         const tokens = generateTokens(user.dataValues.id);
         
-        res.status(200).json({
+        res.status(201).json({
             message: 'Usuario creado con éxito',
             ...tokens
         });
