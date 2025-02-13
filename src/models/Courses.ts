@@ -1,5 +1,5 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/dbConfig");
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../config/dbConfig";
 
 const Courses = sequelize.define(
   "Courses",
