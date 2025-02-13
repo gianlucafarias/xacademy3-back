@@ -37,12 +37,12 @@ const Courses = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    createAt: {
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    updateAt: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
