@@ -27,7 +27,7 @@ module.exports = {
     });
     await queryInterface.addColumn('Courses', 'teacher_id', {
       type: Sequelize.INTEGER,
-      allowNull: false, 
+      allowNull: true, 
       references: {
         model: 'Teacher', 
         key: 'id',
