@@ -1,5 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../../config/dbConfig";
+import Teacher from "./Teacher";
+import CoursesCategory from "./CoursesCategory"; 
 
 const Courses = sequelize.define(
   "Courses",
@@ -48,11 +50,11 @@ const Courses = sequelize.define(
       defaultValue: DataTypes.NOW,
     },
     modalidad: {
-      type: DataTypes.ENUM('PRESENCIAL', 'VIRTUAL', 'HÍBRIDO'),
+      type: DataTypes.ENUM("PRESENCIAL", "VIRTUAL", "HÍBRIDO"),
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('PENDIENTE', 'ACTIVO', 'FINALIZADO'),
+      type: DataTypes.ENUM("PENDIENTE", "ACTIVO", "FINALIZADO"),
       allowNull: false,
     },
     isActive: {
@@ -60,47 +62,42 @@ const Courses = sequelize.define(
       defaultValue: true,
       allowNull: false,
     },
-    category_id: {
+    image_url: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    courses_category_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'CoursesCategory',
-        key: 'id',
-      }
+        model: "courses_category",
+        key: "id",
+      },
     },
     teacher_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'Teacher',
-        key: 'id',
-      }
+        model: "teacher",
+        key: "id",
+      },
     },
-    image_url:{
-      type: DataTypes.STRING,
-      allowNull: false,
-    }
   },
   {
     tableName: "courses",
-    timestamps:true,
+    timestamps: true,
   }
 );
 
-interface Models{
-  CoursesCategory: any;
-  Teacher: any;
-}
-
-Courses.associate = (models: Models) =>{
-  Courses.belongsTo(models.CoursesCategory, {
-    foreignKey: 'category_id',
-    as: 'category',
-  });
-  Courses.belongsTo(models.Teacher, {
-    foreignKey: 'teacher_id',
-    as: 'teacher',
-  });
-}
+// un curso tiene una categoria
+Courses.belongsTo(CoursesCategory, {
+  foreignKey: "courses_category_id",
+  as: "courses_category",
+});
+//un curso tiene un profesor
+Courses.belongsTo(Teacher, {
+  foreignKey: "teacher_id",
+  as: "teacher",
+});
 
 export default Courses;

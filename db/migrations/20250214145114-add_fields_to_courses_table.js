@@ -15,26 +15,6 @@ module.exports = {
       defaultValue: true,
       allowNull: false, 
     });
-    await queryInterface.addColumn('Courses', 'category_id', {
-      type: Sequelize.INTEGER,
-      allowNull: true, 
-      references: {
-        model: 'Courses_Category', 
-        key: 'id',
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL', 
-    });
-    await queryInterface.addColumn('Courses', 'teacher_id', {
-      type: Sequelize.INTEGER,
-      allowNull: true, 
-      references: {
-        model: 'Teacher', 
-        key: 'id',
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL', 
-    });
     await queryInterface.addColumn('Courses', 'image_url', {
       type: Sequelize.STRING,
       allowNull: false, 
@@ -45,8 +25,6 @@ module.exports = {
     await queryInterface.removeColumn('Courses', 'modalidad');
     await queryInterface.removeColumn('Courses', 'status');
     await queryInterface.removeColumn('Courses', 'isActive');
-    await queryInterface.removeColumn('Courses', 'category_id');
-    await queryInterface.removeColumn('Courses', 'teacher_id');
     await queryInterface.removeColumn('Courses', 'image_url');
   }
 };
