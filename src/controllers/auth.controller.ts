@@ -280,6 +280,22 @@ export const registerWithFirebase = async (req: Request, res: Response) => {
     }
 };
 
+export const logout = async (req: Request, res: Response) => {
+    try {
+        const refreshToken = req.headers.authorization?.split(' ')[1];
+        if (!refreshToken) {
+            return res.status(401).json({ message: 'No se proporcionó un token de refresco' });
 
+        }
+        return res.status(200).json({ message: 'Cierre de sesión exitoso' });
+        
+    } catch (error) {
+        console.error('Error en logout:', error);
+        return res.status(500).json({ 
+            message: 'Error al cerrar sesión',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+}
 
 
