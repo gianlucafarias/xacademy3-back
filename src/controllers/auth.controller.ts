@@ -298,4 +298,13 @@ export const logout = async (req: Request, res: Response) => {
     }
 }
 
+export const getUserCount = async (req: Request, res: Response) => {
+    try {
+        const userCount = await User.count();
+        res.status(200).json(userCount);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener el conteo de usuarios' });
+    }
+}
+
 

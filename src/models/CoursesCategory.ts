@@ -16,6 +16,7 @@ const CoursesCategory = sequelize.define(
   },
   {
     tableName: "courses_category",
+    timestamps: false,
   }
 );
 

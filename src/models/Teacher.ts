@@ -26,6 +26,7 @@ const Teacher = sequelize.define(
   },
   {
     tableName: "teacher",
+    timestamps: false,
   }
 );
 
