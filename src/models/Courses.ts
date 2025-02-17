@@ -87,7 +87,7 @@ const Courses = sequelize.define(
   }
 );
 
-interface Models{
+/**interface Models{
   CoursesCategory: any;
   Teacher: any;
 }
@@ -101,6 +101,6 @@ Courses.associate = (models: Models) =>{
     foreignKey: 'teacher_id',
     as: 'teacher',
   });
-}
+}**/
 
 export default Courses;
