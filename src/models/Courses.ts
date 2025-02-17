@@ -89,6 +89,7 @@ const Courses = sequelize.define(
   }
 );
 
+
 // un curso tiene una categoria
 Courses.belongsTo(CoursesCategory, {
   foreignKey: "courses_category_id",
@@ -99,5 +100,7 @@ Courses.belongsTo(Teacher, {
   foreignKey: "teacher_id",
   as: "teacher",
 });
+
+
 
 export default Courses;
