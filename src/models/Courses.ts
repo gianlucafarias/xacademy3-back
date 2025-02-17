@@ -64,9 +64,10 @@ const Courses = sequelize.define(
     },
     image_url: {
       type: DataTypes.STRING,
-      allowNull: false,
+      defaultValue: "https://t4.ftcdn.net/jpg/05/17/53/57/360_F_517535712_q7f9QC9X6TQxWi6xYZZbMmw5cnLMr279.jpg",
+      allowNull: true,
     },
-    courses_category_id: {
+    category_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
@@ -92,7 +93,7 @@ const Courses = sequelize.define(
 
 // un curso tiene una categoria
 Courses.belongsTo(CoursesCategory, {
-  foreignKey: "courses_category_id",
+  foreignKey: "category_id",
   as: "courses_category",
 });
 //un curso tiene un profesor
