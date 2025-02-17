@@ -3,8 +3,8 @@ import { createCourse, getAllCourses, getCourseById, updateCourse } from '../con
 
 const router = Router();
 
-router.post('/create', createCourse);
-router.get('/', getAllCourses);
+router.post('/create', createCourse as RequestHandler);
+router.get('/', getAllCourses as RequestHandler);
 router.get('/:id', getCourseById as RequestHandler);
 router.put('/:id', updateCourse as RequestHandler);
 
