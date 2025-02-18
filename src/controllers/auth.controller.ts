@@ -280,13 +280,19 @@ export const registerWithFirebase = async (req: Request, res: Response) => {
     }
 };
 
+let refreshTokens: string[] = []; // Simulación de lista en memoria
+
 export const logout = async (req: Request, res: Response) => {
     try {
         const refreshToken = req.headers.authorization?.split(' ')[1];
+
         if (!refreshToken) {
             return res.status(401).json({ message: 'No se proporcionó un token de refresco' });
-
         }
+
+        // 🔴 Eliminar el token de la lista de memoria
+        refreshTokens = refreshTokens.filter(token => token !== refreshToken);
+
         return res.status(200).json({ message: 'Cierre de sesión exitoso' });
         
     } catch (error) {
@@ -296,7 +302,8 @@ export const logout = async (req: Request, res: Response) => {
             error: error instanceof Error ? error.message : 'Unknown error'
         });
     }
-}
+};
+
 
 export const getUserCount = async (req: Request, res: Response) => {
     try {
