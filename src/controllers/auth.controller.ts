@@ -47,6 +47,11 @@ export const login = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
+        const isPasswordCorrect = await bcrypt.compare(password, user.dataValues.password);
+        if (!isPasswordCorrect) {
+            return res.status(401).json({ message: 'Contraseña incorrecta' });
+        }
+
         // Generar tokens
         const tokens = generateTokens(user.dataValues.id);
         
@@ -253,6 +258,7 @@ export const registerWithFirebase = async (req: Request, res: Response) => {
             email, 
             name: firstName,
             lastname: lastName,
+            uuid: uuid,
             userRole: 'STUDENT'
         });
 
