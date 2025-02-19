@@ -258,6 +258,7 @@ export const registerWithFirebase = async (req: Request, res: Response) => {
             email, 
             name: firstName,
             lastname: lastName,
+            uuid: uuid,
             userRole: 'STUDENT'
         });
 
