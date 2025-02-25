@@ -198,7 +198,6 @@ export const getCoursesBySearch = async (req: Request, res: Response) => {
   }
 }
 
-
 export const getActiveCoursesCount = async (req: Request, res: Response) => {
   try {
     const activeCoursesCount = await Courses.count({ where: { isActive: true } });
@@ -207,6 +206,53 @@ export const getActiveCoursesCount = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error al obtener el conteo de cursos activos' });
   }
 }
+
+export const getFilteredCourses = async (req: Request, res: Response) => {
+  try {
+    const { categories, price, orderBy } = req.query;
+
+    let whereClause: any = {};
+    let orderClause: any = [];
+
+    if (categories) {
+      const categoryIds = (categories as string).split(',').map(id => parseInt(id.trim(), 10));
+      whereClause.category_id = { [Op.in]: categoryIds };
+    }
+
+    if (price === 'gratuitos') {
+      whereClause.price = 0; 
+    } else if (price === 'arancelados') {
+      whereClause.price = { [Op.gt]: 0 }; 
+    }
+
+    if (orderBy) {
+      switch (orderBy) {
+        case 'fecha':
+          orderClause = [['updatedAt', 'DESC']];  
+          break;
+        // case 'populares':
+        //   orderClause = [['views', 'DESC']]; 
+        //   break;
+        // case 'recomendados':
+        //   orderClause = [['views', 'DESC']]; 
+        //   break;
+        default:
+          orderClause = [['updatedAt', 'DESC']]; 
+          break;
+      }
+    }
+
+    const courses = await Courses.findAll({
+      where: whereClause,
+      order: orderClause,
+    });
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error('Error al filtrar cursos:', error);
+    res.status(500).json({ error: 'Error al obtener los cursos filtrados' });
+  }
+};
 
 
 
