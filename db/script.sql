@@ -1,103 +1,272 @@
-CREATE DATABASE xacademydb;
+-- MySQL Workbench Forward Engineering
 
-USE xacademydb;
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
-CREATE TABLE Users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+-- -----------------------------------------------------
+-- -----------------------------------------------------
+-- Schema xacademydb
+-- -----------------------------------------------------
 
-    name VARCHAR(100) NOT NULL,
-    lastname VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password VARCHAR(255),
-    uuid VARCHAR(255),
-    userRole ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
-    birthday DATE,
-    dni INT,
-    phone VARCHAR(20),
-    address VARCHAR(255),
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- -----------------------------------------------------
+-- Schema xacademydb
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `xacademydb` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
+USE `xacademydb` ;
 
-CREATE TABLE Courses (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(150) NOT NULL,
-    description TEXT,
-    price DECIMAL(10,2) NOT NULL,
-    quota INT NOT NULL,
-    startDate DATE NOT NULL,
-    endDate DATE NOT NULL,
-    hours INT NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- -----------------------------------------------------
+-- Table `xacademydb`.`courses_category`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`courses_category` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(100) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 6
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE Courses_Category (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    course_id INT,
-    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
-);
 
-CREATE TABLE Inscription (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    course_id INT,
-    student_id INT,
-    registrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES Users(id) ON DELETE CASCADE
-);
+-- -----------------------------------------------------
+-- Table `xacademydb`.`users`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`users` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100) NOT NULL,
+  `lastname` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(150) NOT NULL,
+  `password` VARCHAR(255) NULL DEFAULT NULL,
+  `uuid` VARCHAR(255) NULL DEFAULT NULL,
+  `userRole` ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
+  `birthday` DATE NULL DEFAULT NULL,
+  `dni` INT NULL DEFAULT NULL,
+  `phone` VARCHAR(20) NULL DEFAULT NULL,
+  `address` VARCHAR(255) NULL DEFAULT NULL,
+  `createdAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `email` (`email` ASC) VISIBLE,
+  INDEX `users_name` (`name` ASC) VISIBLE,
+  INDEX `users_lastname` (`lastname` ASC) VISIBLE,
+  INDEX `users_dni` (`dni` ASC) VISIBLE,
+  INDEX `users_email` (`email` ASC) VISIBLE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 11
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE Student (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    course_id INT NOT NULL,
-    qualification DECIMAL(5,2),
-    studentCondition ENUM('EN_CURSO', 'APROBADO', 'DESAPROBADO') DEFAULT 'EN_CURSO',
-    payment_status ENUM('PENDIENTE', 'PAGADO', 'ATRASADO') DEFAULT 'PENDIENTE',
-    certificate_id INT NULL,
-    attendance_id INT NULL,
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
-);
 
-CREATE TABLE Teacher (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    course_id INT NOT NULL,
-    specialty VARCHAR(255),
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
-);
+-- -----------------------------------------------------
+-- Table `xacademydb`.`teacher`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`teacher` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `specialty` VARCHAR(255) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `user_id` (`user_id` ASC) VISIBLE,
+  CONSTRAINT `teacher_ibfk_1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `xacademydb`.`users` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 6
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE Assists (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    course_id INT NOT NULL,
-    student_id INT NOT NULL,
-    attendanceDate DATE NOT NULL,
-    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES Student(id) ON DELETE CASCADE
-);
 
-CREATE TABLE Payment (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    course_id INT NOT NULL,
-    student_id INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    status ENUM('PENDIENTE', 'PAGADO', 'ATRASADO') DEFAULT 'PENDIENTE',
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES Student(id) ON DELETE CASCADE
-);
+-- -----------------------------------------------------
+-- Table `xacademydb`.`courses`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`courses` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(150) NOT NULL,
+  `description` TEXT NULL DEFAULT NULL,
+  `price` DECIMAL(10,2) NOT NULL,
+  `quota` INT NOT NULL,
+  `startDate` DATE NOT NULL,
+  `endDate` DATE NOT NULL,
+  `hours` INT NOT NULL,
+  `createdAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `category_id` INT NULL DEFAULT NULL,
+  `teacher_id` INT NOT NULL,
+  `modalidad` ENUM('PRESENCIAL', 'VIRTUAL', 'HÍBRIDO') NOT NULL,
+  `status` ENUM('PENDIENTE', 'ACTIVO', 'FINALIZADO') NOT NULL,
+  `isActive` TINYINT(1) NOT NULL DEFAULT '1',
+  `image_url` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_courses_courses_category_idx` (`category_id` ASC) VISIBLE,
+  INDEX `fk_courses_teacher_idx` (`teacher_id` ASC) VISIBLE,
+  CONSTRAINT `fk_courses_courses_category`
+    FOREIGN KEY (`category_id`)
+    REFERENCES `xacademydb`.`courses_category` (`id`),
+  CONSTRAINT `fk_courses_teacher`
+    FOREIGN KEY (`teacher_id`)
+    REFERENCES `xacademydb`.`teacher` (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 19
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE News (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(150) NOT NULL,
-    user_id INT NOT NULL,
-    description TEXT,
-    image VARCHAR(255),
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
-);
 
+-- -----------------------------------------------------
+-- Table `xacademydb`.`student`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`student` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `course_id` INT NOT NULL,
+  `qualification` DECIMAL(5,2) NULL DEFAULT NULL,
+  `studentCondition` ENUM('EN_CURSO', 'APROBADO', 'DESAPROBADO') NOT NULL,
+  `payment_status` ENUM('PENDIENTE', 'PAGADO', 'ATRADADO') NOT NULL,
+  `createdAt` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `user_id` (`user_id` ASC) VISIBLE,
+  INDEX `course_id` (`course_id` ASC) VISIBLE,
+  CONSTRAINT `student_ibfk_1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `xacademydb`.`users` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `student_ibfk_2`
+    FOREIGN KEY (`course_id`)
+    REFERENCES `xacademydb`.`courses` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 7
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `xacademydb`.`assists`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`assists` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `course_id` INT NOT NULL,
+  `student_id` INT NOT NULL,
+  `attendanceDate` DATE NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `course_id` (`course_id` ASC) VISIBLE,
+  INDEX `student_id` (`student_id` ASC) VISIBLE,
+  CONSTRAINT `assists_ibfk_1`
+    FOREIGN KEY (`course_id`)
+    REFERENCES `xacademydb`.`courses` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `assists_ibfk_2`
+    FOREIGN KEY (`student_id`)
+    REFERENCES `xacademydb`.`student` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `xacademydb`.`certificate`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`certificate` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `student_id` INT NOT NULL,
+  `course_id` INT NOT NULL,
+  `issue_date` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` ENUM('PENDIENTE', 'EMITIDO', 'REVOCADO') NULL DEFAULT 'PENDIENTE',
+  PRIMARY KEY (`id`),
+  INDEX `student_id` (`student_id` ASC) VISIBLE,
+  INDEX `course_id` (`course_id` ASC) VISIBLE,
+  CONSTRAINT `certificate_ibfk_1`
+    FOREIGN KEY (`student_id`)
+    REFERENCES `xacademydb`.`student` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `certificate_ibfk_2`
+    FOREIGN KEY (`course_id`)
+    REFERENCES `xacademydb`.`courses` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `xacademydb`.`inscription`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`inscription` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `course_id` INT NOT NULL,
+  `student_id` INT NOT NULL,
+  `regirationDate` DATETIME NULL DEFAULT NULL,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `course_id` (`course_id` ASC) VISIBLE,
+  INDEX `student_id` (`student_id` ASC) VISIBLE,
+  CONSTRAINT `inscription_ibfk_1`
+    FOREIGN KEY (`course_id`)
+    REFERENCES `xacademydb`.`courses` (`id`)
+    ON UPDATE CASCADE,
+  CONSTRAINT `inscription_ibfk_2`
+    FOREIGN KEY (`student_id`)
+    REFERENCES `xacademydb`.`student` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 9
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `xacademydb`.`news`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`news` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(150) NOT NULL,
+  `user_id` INT NOT NULL,
+  `description` TEXT NULL DEFAULT NULL,
+  `image` VARCHAR(255) NULL DEFAULT NULL,
+  `createdAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `user_id` (`user_id` ASC) VISIBLE,
+  CONSTRAINT `news_ibfk_1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `xacademydb`.`users` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `xacademydb`.`payment`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `xacademydb`.`payment` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `course_id` INT NOT NULL,
+  `student_id` INT NOT NULL,
+  `price` DECIMAL(10,2) NOT NULL,
+  `createdAt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` ENUM('PENDIENTE', 'PAGADO', 'ATRASADO') NOT NULL,
+  `updatedAt` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `course_id` (`course_id` ASC) VISIBLE,
+  INDEX `student_id` (`student_id` ASC) VISIBLE,
+  CONSTRAINT `payment_ibfk_1`
+    FOREIGN KEY (`course_id`)
+    REFERENCES `xacademydb`.`courses` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `payment_ibfk_2`
+    FOREIGN KEY (`student_id`)
+    REFERENCES `xacademydb`.`student` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 6
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
