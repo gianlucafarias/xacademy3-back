@@ -1,5 +1,5 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/dbConfig");
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../config/dbConfig";
 import Courses from "./Courses";
 import Student from "./Student";
 
@@ -48,3 +48,15 @@ const Payment = sequelize.define(
     timestamps: true,
   }
 );
+// un Pago tiene una curso
+Payment.belongsTo(Courses, {
+  foreignKey: "course_id",
+  as: "courses",
+});
+//un Pago tiene un estudiante
+Payment.belongsTo(Student, {
+  foreignKey: "student_id",
+  as: "student",
+});
+
+export default Payment;

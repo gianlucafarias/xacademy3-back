@@ -39,7 +39,7 @@ CREATE TABLE Courses_Category (
     FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Inscriptions (
+CREATE TABLE Inscription (
     id INT AUTO_INCREMENT PRIMARY KEY,
     course_id INT,
     student_id INT,

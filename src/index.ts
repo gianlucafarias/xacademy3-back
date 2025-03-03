@@ -5,6 +5,8 @@ import authRoutes from './routes/auth.routes';
 import cors from 'cors';
 import courseRoutes from './routes/course.routes';
 import teacherRoutes from './routes/teacher.routes';
+import studentRoutes from './routes/student.routes';
+import inscritionRoutes from './routes/inscription.routes'
 
 dotenv.config();
 const app = express();
@@ -17,6 +19,9 @@ app.use(cors());
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/teachers', teacherRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/inscriptions', inscritionRoutes);
+
 
 app.get('/', (req, res) => {
     res.send('API corriendo');
