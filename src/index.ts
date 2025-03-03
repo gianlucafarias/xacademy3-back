@@ -6,7 +6,8 @@ import cors from 'cors';
 import courseRoutes from './routes/course.routes';
 import teacherRoutes from './routes/teacher.routes';
 import studentRoutes from './routes/student.routes';
-import inscritionRoutes from './routes/inscription.routes'
+import inscritionRoutes from './routes/inscription.routes';
+import PaymentRoutes from './routes/payment.routes';
 
 dotenv.config();
 const app = express();
@@ -21,6 +22,8 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/inscriptions', inscritionRoutes);
+app.use('/api/payments', PaymentRoutes);
+
 
 
 app.get('/', (req, res) => {

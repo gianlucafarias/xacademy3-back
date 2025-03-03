@@ -3,6 +3,8 @@ import Inscription from "../models/Inscription";
 import Student from "../models/Student";
 import Courses from "../models/Courses";
 import User from "../models/User";
+import Payment from "../models/Payment";
+
 
 /**
  * Mostrar todas las incripciones
@@ -96,11 +98,11 @@ export const enrollStudentInCourse = async (req: Request, res: Response) => {
         // Validación de datos requeridos
         const validationError = validateRequestData(userId, courseId);
         if (validationError) {
-            return res.status(400).json({ error: validationError });
+            return res.status(404).json({ error: validationError });
         }
         //Verifico que exista cupo disponible
         if(!(await hasAviableQuota(courseId))){
-            return res.status(400).json({
+            return res.status(404).json({
                 error:'No hay cupo disponible'
             });
         }
@@ -110,11 +112,14 @@ export const enrollStudentInCourse = async (req: Request, res: Response) => {
 
         // Verificar si ya está inscrito
         if (await isStudentAlreadyEnrolled(student.getDataValue("id"), courseId)) {
-            return res.status(400).json({ error: "Ya estás inscripto en este curso" });
+            return res.status(404).json({ error: "Ya estás inscripto en este curso" });
         }
 
         // Inscribir al estudiante
         const inscription = await enrollStudent(student.getDataValue("id"), courseId);
+        
+        // Registrar el pago en estado "PENDIENTE"
+        await registerPendingPayment(student.getDataValue("id"), courseId);
 
         //actulizo el cupo disponible
         await updateCourseQuota(courseId);
@@ -144,10 +149,14 @@ const getValidStudent = async (userId: number, courseId: number, birthday: strin
     if (!user) throw new Error("El usuario no fue encontrado");
     if (user.getDataValue("userRole") !== "STUDENT") throw new Error("El usuario no es un estudiante");
 
-    let student = await Student.findOne({ where: { user_id: userId } });
+    let student = await Student.findOne({ 
+        where: { user_id: userId } });
 
     if (!student) {
-        student = await Student.create({ user_id: userId, course_id: courseId });
+        student = await Student.create({ 
+            user_id: userId, 
+            course_id: courseId 
+        });
 
         // Actualizar datos personales en User
         await User.update({ birthday, dni, phone, address }, { where: { id: userId } });
@@ -199,6 +208,24 @@ const updateCourseQuota =async(courseId: number)=>{
  */
 const enrollStudent = async (studentId: number, courseId: number) => {
     return await Inscription.create({ student_id: studentId, course_id: courseId });
+};
+
+/**
+ * Registra un pago en estado "PENDIENTE" al inscribir al estudiante
+ */
+const registerPendingPayment = async (studentId: number, courseId: number) => {
+    const existingPayment = await Payment.findOne({
+        where: { student_id: studentId, course_id: courseId },
+    });
+
+    if (!existingPayment) {
+        await Payment.create({
+            student_id: studentId,
+            course_id: courseId,
+            price: 0, // Puedes poner el precio real si lo tienes
+            status: "PENDIENTE",
+        });
+    }
 };
 
 
