@@ -3,13 +3,14 @@ import Teacher from '../models/Teacher';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import { auth } from '../../config/firebase';
-
+import Courses from '../models/Courses';
 export const createTeacher = async (req: Request, res: Response) => {
     const {
         name,
         lastname,
         email,
         password,
+        phone,
         specialty
     } = req.body;
 
@@ -39,6 +40,7 @@ export const createTeacher = async (req: Request, res: Response) => {
             name,
             lastname,
             email,
+            phone,
             password: hashedPassword,
             userRole: 'TEACHER'
         });
@@ -99,14 +101,21 @@ export const getTeacherById = async (req: Request, res: Response) => {
                 model: User,
                 as: 'user',
                 attributes: { exclude: ['password'] }
-            }]
+            }
+        ]
         });
 
         if (!teacher) {
             return res.status(404).json({ error: 'Profesor no encontrado' });
         }
 
-        res.status(200).json(teacher);
+        const courses = await Courses.findAll({
+            where: {
+                teacher_id: teacher.dataValues.id
+            }
+        });
+
+        res.status(200).json({ teacher, courses });
     } catch (error) {
         console.error('Error al obtener profesor:', error);
         res.status(500).json({ error: 'Error al obtener el profesor' });
@@ -178,6 +187,60 @@ export const getTeacherCount = async (req: Request, res: Response) => {
     }
 }
 
+export const assignTeacherRoleToUser = async (req: Request, res: Response) => {
+    const { email, specialty } = req.body;
+    
+    try {
+        // Validar campos requeridos
+        if (!email || !specialty) {
+            return res.status(400).json({ error: 'El correo y la especialidad son requeridos' });
+        }
 
+        // Buscar el usuario por correo
+        const user = await User.findOne({ where: { email } });
+        
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
 
+        // Verificar si el usuario ya es profesor
+        if (user.dataValues.userRole === 'TEACHER') {
+            return res.status(400).json({ error: 'El usuario ya tiene rol de profesor' });
+        }
+
+        // Verificar si ya existe entrada en la tabla teacher para este usuario
+        const existingTeacher = await Teacher.findOne({ where: { user_id: user.dataValues.id } });
+        
+        if (existingTeacher) {
+            return res.status(400).json({ error: 'El usuario ya está registrado como profesor' });
+        }
+
+        // Actualizar el rol del usuario a TEACHER
+        await user.update({ userRole: 'TEACHER' });
+
+        // Crear la entrada en la tabla teacher
+        const teacher = await Teacher.create({
+            user_id: user.dataValues.id,
+            specialty
+        });
+
+        // Obtener el profesor con los datos del usuario
+        const teacherWithUser = await Teacher.findByPk(teacher.dataValues.id, {
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: { exclude: ['password'] }
+            }]
+        });
+
+        res.status(200).json({ 
+            message: 'Rol de profesor asignado exitosamente', 
+            teacher: teacherWithUser 
+        });
+        
+    } catch (error) {
+        console.error('Error al asignar rol de profesor:', error);
+        res.status(500).json({ error: 'Error al asignar el rol de profesor al usuario' });
+    }
+}
 
