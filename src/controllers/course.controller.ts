@@ -90,6 +90,18 @@ export const getCourseById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error al obtener el curso' });
   }
 }
+export const getCategoryById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const categories = await CoursesCategory.findByPk(id);
+    if (!categories) {
+      return res.status(404).json({ error: 'Curso no encontrado' });
+    }
+    res.status(200).json(categories);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener el curso' });
+  }
+}
 
 export const updateCourse = async (req: Request, res: Response) => {
   const { id } = req.params;
