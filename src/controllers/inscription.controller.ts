@@ -4,6 +4,7 @@ import Student from "../models/Student";
 import Courses from "../models/Courses";
 import User from "../models/User";
 import Payment from "../models/Payment";
+import { AuthRequest } from "../middleware/authMiddleware";
 
 
 /**
@@ -91,9 +92,14 @@ export const getInscriptionsByStudentId = async (req: Request, res: Response) =>
  * @param res inscription 
  * @returns 
  */
-export const enrollStudentInCourse = async (req: Request, res: Response) => {
+export const enrollStudentInCourse = async (req: AuthRequest, res: Response) => {
     try {
-        const { user_id: userId, course_id: courseId, birthday, dni, phone, address } = req.body;
+        const { course_id: courseId, birthday, dni, phone, address } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: "Usuario no autenticado" });
+        }
 
         // Validación de datos requeridos
         const validationError = validateRequestData(userId, courseId);
