@@ -2,6 +2,7 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../../config/dbConfig";
 import Courses from "./Courses";
 import User from "./User";
+import Inscription from "./Inscription";
 
 const Student = sequelize.define("Student", {
     id: {
