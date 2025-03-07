@@ -58,18 +58,23 @@ export const getInscriptionsByCourseId = async (req: Request, res: Response) => 
  * @Response inscription
  */
 
-export const getInscriptionsByStudentId = async (req: Request, res: Response) => {
-    const { student_id } = req.params;
+export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response) => {
+    const user = req.user;
     try {
         const inscriptions =await Inscription.findAll({
-            where:{
-                student_id,
-            },
             include:[
                 {
                     model:Courses,
                     as:"course",
                     attributes:['title']
+                },
+                {
+                    model: Student, 
+                    as: "student", 
+                    where: {
+                        user_id: user.id  
+                    },
+                    attributes: ['id'] 
                 }
             ]
         });
@@ -136,6 +141,40 @@ export const enrollStudentInCourse = async (req: AuthRequest, res: Response) => 
         res.status(500).json({ error: error.message || "Error interno del servidor" });
     }
 };
+
+
+export const updateUserData = async (req: AuthRequest, res: Response) => {
+  try {
+    const { dni, phone, birthday, address } = req.body;
+    const userId = req.user?.id; // Obtener el ID del usuario autenticado
+
+    if (!userId) {
+      return res.status(401).json({ error: "Usuario no autenticado" });
+    }
+
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const updatedUser = await user.update({
+      dni,
+      phone,
+      birthday,
+      address,
+    });
+
+    return res.status(200).json({
+      message: "Datos del usuario actualizados correctamente",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error al actualizar los datos del usuario:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
 
 /**
  * Valido que la solicitud contenga los datos requeridos
