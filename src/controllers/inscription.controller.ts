@@ -66,7 +66,7 @@ export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response
                 {
                     model:Courses,
                     as:"course",
-                    attributes:['title']
+                    attributes:['title', 'image_url', 'startDate', 'price', 'endDate', 'modalidad']
                 },
                 {
                     model: Student, 
@@ -273,5 +273,32 @@ const registerPendingPayment = async (studentId: number, courseId: number) => {
     }
 };
 
-
+export const getStudentByUserId = async (req: Request, res: Response) => {
+    const userId = req.params.user_id;  
+  
+    try {
+      console.log('Buscando estudiante con user_id:', userId);  
+  
+      const student = await Student.findOne({
+        where: { user_id: userId },  
+        include: [
+          { model: User, as: 'user' },  
+          { model: Courses, as: 'courses' } 
+        ]
+      });
+      
+      if (student) {
+        console.log('Estudiante encontrado:', student);
+        res.json({ student });  
+      } else {
+        console.warn('Estudiante no encontrado para el user_id:', userId);
+        res.status(404).json({ error: 'Estudiante no encontrado' });
+      }
+    } catch (err) {
+      console.error('Error al obtener estudiante:', err);  
+      res.status(500).json({ error: 'Error al obtener estudiante' });
+    }
+  };
+  
+    
 
