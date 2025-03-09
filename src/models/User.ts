@@ -1,5 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../../config/dbConfig";
+import Student from "./Student";
+import Teacher from "./Teacher";
 
 const User = sequelize.define(
   "User",
@@ -68,5 +70,6 @@ const User = sequelize.define(
     //timestamps: false,
   }
 );
+
 
 export default User;
