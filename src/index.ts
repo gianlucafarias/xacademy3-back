@@ -20,7 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/assist', AssistRoutes);
+app.use('/api/assitances', AssistRoutes);
 
 app.get('/', (req, res) => {
     res.send('API corriendo');
