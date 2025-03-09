@@ -1,7 +1,7 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/dbConfig");
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../config/dbConfig";
 import Courses from "./Courses";
-import User from "./User";
+import Student from "./Student";
 
 const Inscription = sequelize.define(
   "Inscription",
@@ -23,7 +23,7 @@ const Inscription = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: User,
+        model: Student,
         key: "id",
       },
       onDelete: "CASCADE",
@@ -38,5 +38,14 @@ const Inscription = sequelize.define(
     timestamps: true,
   }
 );
-
+// una inscripcion tiene una curso
+Inscription.belongsTo(Courses, {
+  foreignKey: "course_id",
+  as: "course", 
+});
+//una inscripcion tiene un estudiante
+Inscription.belongsTo(Student, {
+  foreignKey: "student_id",
+  as: "student",
+});
 export default Inscription;

@@ -90,6 +90,18 @@ export const getCourseById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error al obtener el curso' });
   }
 }
+export const getCategoryById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const categories = await CoursesCategory.findByPk(id);
+    if (!categories) {
+      return res.status(404).json({ error: 'Curso no encontrado' });
+    }
+    res.status(200).json(categories);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener el curso' });
+  }
+}
 
 export const updateCourse = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -251,6 +263,16 @@ export const getFilteredCourses = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al filtrar cursos:', error);
     res.status(500).json({ error: 'Error al obtener los cursos filtrados' });
+  }
+};
+
+export const findCourseById = async (courseId: number) => {
+  try {
+    const course = await Courses.findByPk(courseId);
+    return course;
+  } catch (error) {
+    console.error('Error al buscar el curso:', error);
+    throw new Error('Error al obtener el curso');
   }
 };
 
