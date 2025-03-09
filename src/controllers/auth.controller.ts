@@ -4,6 +4,10 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import { auth } from '../../config/firebase';
 import { Op } from 'sequelize';
+import exp from 'constants';
+import { AuthRequest } from '../middleware/authMiddleware';
+import Inscription from '../models/Inscription';
+import Student from '../models/Student';
 
 interface LoginRequest {
     email: string;
@@ -312,5 +316,29 @@ export const getUserCount = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al obtener el conteo de usuarios' });
     }
 }
+
+export const getMe = async (req: AuthRequest, res: Response) => {
+    try {
+        const user = req.user;
+        if (!user || !user.id) {
+            return res.status(400).json({ message: "Usuario no autenticado" });
+        }
+
+        const me = await User.findOne({
+            attributes: ['id', 'birthday', 'address', 'dni', 'phone'], 
+            where: { id: user.id }
+        });
+
+        if (!me) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+
+        res.status(200).json(me);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+};
+
 
 
