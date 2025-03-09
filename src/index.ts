@@ -25,7 +25,6 @@ app.use('/api/inscriptions', inscritionRoutes);
 app.use('/api/payments', PaymentRoutes);
 
 
-
 app.get('/', (req, res) => {
     res.send('API corriendo');
 });
