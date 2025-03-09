@@ -31,5 +31,3 @@ export const getStudentById = async (req: Request, res: Response) => {
 }
 
 
-  
-  

@@ -2,6 +2,7 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../../config/dbConfig";
 import Teacher from "./Teacher";
 import CoursesCategory from "./CoursesCategory"; 
+import Payment from "./Payment";
 
 const Courses = sequelize.define(
   "Courses",
@@ -101,7 +102,9 @@ Courses.belongsTo(Teacher, {
   foreignKey: "teacher_id",
   as: "teacher",
 });
-
-
+// Courses.hasMany(Payment, 
+//   { foreignKey: 'course_id', 
+//     as: 'payments' 
+//   });
 
 export default Courses;

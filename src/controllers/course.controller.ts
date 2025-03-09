@@ -266,6 +266,16 @@ export const getFilteredCourses = async (req: Request, res: Response) => {
   }
 };
 
+export const findCourseById = async (courseId: number) => {
+  try {
+    const course = await Courses.findByPk(courseId);
+    return course;
+  } catch (error) {
+    console.error('Error al buscar el curso:', error);
+    throw new Error('Error al obtener el curso');
+  }
+};
+
 
 
 
