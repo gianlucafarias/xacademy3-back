@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../../config/dbConfig";
-import Courses from "./Courses";
+import Class from "./Class";
 import Student from "./Student";
 
 const Assist = sequelize.define(
@@ -11,14 +11,13 @@ const Assist = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    course_id: {
+    class_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: Courses,
+        model: Class,
         key: "id",
       },
-      onDelete: "CASCADE",
     },
     student_id: {
       type: DataTypes.INTEGER,
@@ -28,10 +27,6 @@ const Assist = sequelize.define(
         key: "id",
       },
       onDelete: "CASCADE",
-    },
-    attendanceDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
     },
     attendance: {
       type: DataTypes.BOOLEAN,
@@ -55,14 +50,14 @@ const Assist = sequelize.define(
   }
 );
 
-Assist.belongsTo(Courses, {
-  foreignKey: "course_id",
-  as: "course", // Cambio de "courses" a "course"
+Assist.belongsTo(Class, {
+  foreignKey: "class_id",
+  as: "class", 
 });
 
 Assist.belongsTo(Student, {
   foreignKey: "student_id",
-  as: "student", // Correcto
+  as: "student",
 });
 
 export default Assist;

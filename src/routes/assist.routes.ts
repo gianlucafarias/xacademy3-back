@@ -1,10 +1,10 @@
 import { RequestHandler, Router } from 'express';
-import { getAllAssistByIdCurse } from '../controllers/assist.controller';
+import { getAllAssistByIdStudent , registerAttendance } from '../controllers/assist.controller';
 
 const router = Router();
 
-router.get('/assitance/:course_id', getAllAssistByIdCurse as RequestHandler);
-
+router.get('/view/:student_id', getAllAssistByIdStudent  as RequestHandler);
+router.post('/register', registerAttendance as RequestHandler);
 
 
 export default router;
