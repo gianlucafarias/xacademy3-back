@@ -90,6 +90,18 @@ export const getCourseById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error al obtener el curso' });
   }
 }
+export const getCategoryById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const categories = await CoursesCategory.findByPk(id);
+    if (!categories) {
+      return res.status(404).json({ error: 'Curso no encontrado' });
+    }
+    res.status(200).json(categories);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener el curso' });
+  }
+}
 
 export const updateCourse = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -209,10 +221,11 @@ export const getActiveCoursesCount = async (req: Request, res: Response) => {
 
 export const getFilteredCourses = async (req: Request, res: Response) => {
   try {
-    const { categories, price, orderBy } = req.query;
+    const { categories, price, orderBy, page = 1, limit = 10 } = req.query;
 
     let whereClause: any = {};
     let orderClause: any = [];
+    const offset = (Number(page) - 1) * Number(limit);
 
     if (categories) {
       const categoryIds = (categories as string).split(',').map(id => parseInt(id.trim(), 10));
@@ -242,15 +255,33 @@ export const getFilteredCourses = async (req: Request, res: Response) => {
       }
     }
 
-    const courses = await Courses.findAll({
+    const { count, rows } = await Courses.findAndCountAll({
       where: whereClause,
       order: orderClause,
+      limit: Number(limit),
+      offset: offset
     });
 
-    res.status(200).json(courses);
+    res.status(200).json({
+      courses: rows,
+      totalItems: count,
+      currentPage: Number(page),
+      totalPages: Math.ceil(count / Number(limit))
+    });
+
   } catch (error) {
     console.error('Error al filtrar cursos:', error);
     res.status(500).json({ error: 'Error al obtener los cursos filtrados' });
+  }
+};
+
+export const findCourseById = async (courseId: number) => {
+  try {
+    const course = await Courses.findByPk(courseId);
+    return course;
+  } catch (error) {
+    console.error('Error al buscar el curso:', error);
+    throw new Error('Error al obtener el curso');
   }
 };
 
