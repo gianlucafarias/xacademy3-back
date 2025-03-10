@@ -244,3 +244,31 @@ export const assignTeacherRoleToUser = async (req: Request, res: Response) => {
     }
 }
 
+export const getTeacherByUserId = async (req: Request, res: Response) => {
+    const userId = req.params.user_id;
+    try {
+        const teacher = await Teacher.findOne({
+            where: { user_id: userId },
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: { exclude: ['password'] }
+            }]
+        });
+
+        if (!teacher) {
+            return res.status(404).json({ error: 'Profesor no encontrado' });
+        }
+
+        const courses = await Courses.findAll({
+            where: {
+                teacher_id: teacher.dataValues.id
+            }
+        });
+
+        res.status(200).json({ teacher, courses });
+    } catch (error) {
+        console.error('Error al obtener profesor por user_id:', error);
+        res.status(500).json({ error: 'Error al obtener el profesor' });
+    }
+}

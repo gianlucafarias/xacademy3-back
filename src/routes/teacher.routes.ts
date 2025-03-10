@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from 'express';
-import { createTeacher, getAllTeachers, getTeacherById, getTeacherCount, updateTeacher, assignTeacherRoleToUser } from '../controllers/teacher.controller';
+import { createTeacher, getAllTeachers, getTeacherById, getTeacherCount, updateTeacher, assignTeacherRoleToUser, getTeacherByUserId } from '../controllers/teacher.controller';
 
 const router = Router();
 
@@ -9,5 +9,6 @@ router.get('/view/:id', getTeacherById as RequestHandler);
 router.put('/update/:id', updateTeacher as RequestHandler);
 router.get('/count', getTeacherCount as RequestHandler);
 router.post('/assign-role', assignTeacherRoleToUser as RequestHandler);
+router.get('/user/:user_id', getTeacherByUserId as RequestHandler);
 
 export default router;

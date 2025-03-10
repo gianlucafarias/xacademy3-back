@@ -312,5 +312,3 @@ export const getUserCount = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al obtener el conteo de usuarios' });
     }
 }
-
-
