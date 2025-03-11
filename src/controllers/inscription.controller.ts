@@ -5,6 +5,7 @@ import Courses from "../models/Courses";
 import User from "../models/User";
 import Payment from "../models/Payment";
 import { AuthRequest } from "../middleware/authMiddleware";
+import { Model, Op } from "sequelize";
 
 
 /**
@@ -36,7 +37,18 @@ export const getInscriptionsByCourseId = async (req: Request, res: Response) => 
             include: [
                 {
                     model: Student,
-                    as: "student"
+                    as: "student",
+                    where: {
+                        user_id: { [Op.col]: 'student.user_id' },
+                        },
+                    include: [
+                        {
+                            model: User,
+                            as: "user",
+                            attributes: ["name","lastname", "dni", "phone", "birthday", "address", "email"],
+                        }]
+                         
+                    
                 }
             ]
         });
