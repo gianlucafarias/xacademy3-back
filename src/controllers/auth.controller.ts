@@ -340,5 +340,44 @@ export const getMe = async (req: AuthRequest, res: Response) => {
     }
 };
 
+export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+    const userId = req.user?.id;
+    if (!userId) {
+        res.status(401).json({ message: "Usuario no autenticado" });
+        return;
+    }
+
+    const { name, lastname, dni, phone, address, birthday } = req.body;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+        res.status(404).json({ message: "Usuario no encontrado" });
+        return;
+    }
+
+    await user.update({
+        name,
+        lastname,
+        dni,
+        phone,
+        address,
+        birthday
+    });
+
+    const updatedUser = await User.findByPk(userId, {
+        attributes: ['id', 'name', 'lastname', 'dni', 'phone', 'address', 'birthday']
+    });
+
+    res.status(200).json({
+        message: "Perfil actualizado con éxito",
+        user: updatedUser
+    });
+
+    } catch (error) {
+        console.error('Error al actualizar perfil:', error);
+        res.status(500).json({ message: "Error al actualizar el perfil" });
+    }
+};
 
 
