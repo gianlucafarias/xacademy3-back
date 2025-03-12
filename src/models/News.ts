@@ -1,5 +1,5 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/dbConfig");
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../config/dbConfig";
 import User from "./User";
 
 const News = sequelize.define(
@@ -23,7 +23,7 @@ const News = sequelize.define(
       },
       onUpdate: "CASCADE",
     },
-    desciption: {
+    description: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
@@ -31,12 +31,12 @@ const News = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    createAt: {
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    updateAt: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
