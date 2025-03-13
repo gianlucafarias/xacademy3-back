@@ -104,19 +104,63 @@ export const getCategoryById = async (req: Request, res: Response) => {
 }
 
 export const updateCourse = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { title, description, price, quota, startDate, endDate, hours } = req.body;
+  const { id } = req.params; // Obtener el ID del curso desde los parámetros de la URL
+  const {
+    title,
+    description,
+    price,
+    quota,
+    startDate,
+    endDate,
+    hours,
+    status,
+    modalidad,
+    image_url,
+    teacher_id,
+    category_id
+  } = req.body;
+  console.log('Recibiendo image_url:', image_url);
+
   try {
+    // Buscar si el curso existe
     const course = await Courses.findByPk(id);
+
     if (!course) {
       return res.status(404).json({ error: 'Curso no encontrado' });
     }
-    await course.update({ title, description, price, quota, startDate, endDate, hours });
-    res.status(200).json(course);
+
+    // Validar que el status sea válido si se envía
+    if (status && !['PENDIENTE', 'ACTIVO', 'FINALIZADO'].includes(status)) {
+      return res.status(400).json({ error: 'Estado no válido' });
+    }
+
+    // Validar que la modalidad sea válida si se envía  
+    if (modalidad && !['PRESENCIAL', 'VIRTUAL', 'HÍBRIDO'].includes(modalidad)) {
+      return res.status(400).json({ error: 'Modalidad no válida' });
+    }
+
+    // Actualizar solo los campos que se enviaron en la solicitud
+    await course.update({
+      title,
+      description,
+      price,
+      quota,
+      startDate,
+      endDate,
+      hours,
+      status,
+      modalidad,
+      image_url: image_url || image_url,
+      teacher_id,
+      category_id
+    });
+
+    res.status(200).json({ message: 'Curso actualizado con éxito', course });
   } catch (error) {
+    console.error('Error al actualizar el curso:', error);
     res.status(500).json({ error: 'Error al actualizar el curso' });
   }
-}
+};
 
 export const getCourseByCategory = async (req: Request, res: Response) => {
   const { category_id } = req.params;
