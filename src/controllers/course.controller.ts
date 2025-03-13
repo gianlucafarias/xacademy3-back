@@ -345,6 +345,18 @@ export const changeCourseActive = async (req: Request, res: Response) => {
   }
 }
 
+export const lastestCourses = async (req: Request, res: Response)=>{
+  try {
+    const lastestCourses = await Courses.findAll({
+      order:[['createdAt', 'DESC']],
+      limit:3
+    });
+    res.json(lastestCourses);
+  } catch (error) {
+    res.status(500).json({message:'Error al obtener los ultimos cursos'})
+  }
+}
+
 
 
 
