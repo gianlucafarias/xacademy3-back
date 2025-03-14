@@ -11,6 +11,7 @@ import ClassRoutes from './routes/class.routes';
 import studentRoutes from './routes/student.routes';
 import inscritionRoutes from './routes/inscription.routes';
 import PaymentRoutes from './routes/payment.routes';
+import newsRoutes from './routes/news.routes';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,6 +30,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/inscriptions', inscritionRoutes);
 app.use('/api/payments', PaymentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/news', newsRoutes);
 
 app.get('/', (req, res) => {
     res.send('API corriendo');
