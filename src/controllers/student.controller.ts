@@ -136,3 +136,4 @@ export const updateStudentGrade = async (req: Request, res: Response): Promise<v
     res.status(500).json({ message: "Error al actualizar la calificación" });
   }
 };
+
