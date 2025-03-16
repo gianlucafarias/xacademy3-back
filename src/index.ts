@@ -12,6 +12,8 @@ import studentRoutes from './routes/student.routes';
 import inscritionRoutes from './routes/inscription.routes';
 import PaymentRoutes from './routes/payment.routes';
 import newsRoutes from './routes/news.routes';
+import certificateRoutes from "./routes/certificate.routes";
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,6 +30,7 @@ app.use('/api/assists', AssistRoutes);
 app.use('/api/classes', ClassRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/inscriptions', inscritionRoutes);
+app.use('/api/certificates', certificateRoutes );
 app.use('/api/payments', PaymentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/news', newsRoutes);
