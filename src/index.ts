@@ -12,6 +12,8 @@ import studentRoutes from './routes/student.routes';
 import inscritionRoutes from './routes/inscription.routes';
 import PaymentRoutes from './routes/payment.routes';
 import newsRoutes from './routes/news.routes';
+import cron from 'node-cron';
+import {updateCourseStatus} from './controllers/course.controller';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +34,11 @@ app.use('/api/payments', PaymentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/news', newsRoutes);
 
+// **Tarea programada con node-cron**
+cron.schedule("0 0 * * *", async () => {
+    console.log("Ejecutando actualización de estado de cursos...");
+    await updateCourseStatus();
+  });
 app.get('/', (req, res) => {
     res.send('API corriendo');
 });

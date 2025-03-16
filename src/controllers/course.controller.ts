@@ -12,7 +12,6 @@ export const createCourse = async (req: Request, res: Response) => {
     startDate, 
     endDate, 
     hours, 
-    status, 
     modalidad, 
     image_url, 
     teacher_id,
@@ -21,20 +20,26 @@ export const createCourse = async (req: Request, res: Response) => {
 
   try {
     // Validar que todos los campos requeridos estén presentes
-    if (!title || !description || !price || !quota || !startDate || !endDate || !hours || !status || !modalidad || !teacher_id || !category_id) {
+    if (!title || !description || !price || !quota || !startDate || !endDate || !hours  || !modalidad || !teacher_id || !category_id) {
       return res.status(400).json({ error: 'Todos los campos son requeridos' });
-    }
-
-    // Validar que el status sea válido
-    if (!['PENDIENTE', 'ACTIVO', 'FINALIZADO'].includes(status)) {
-      return res.status(400).json({ error: 'Estado no válido' });
     }
 
     // Validar que la modalidad sea válida  
     if (!['PRESENCIAL', 'VIRTUAL', 'HÍBRIDO'].includes(modalidad)) {
       return res.status(400).json({ error: 'Modalidad no válida' });
     }
+    //Definir estado del curso dependiendo de la fecha
+    const today = new Date();
+    let status: string = 'PENDIENTE';//estado por defecto
 
+    if(new Date(startDate) <= today && new Date(endDate) >= today){
+      status = 'ACTIVO';
+    }else if(new Date(endDate) < today){
+      status = 'FINALIZADO';
+    }
+    console.log(status);
+
+    // Crear el curso
     const course = await Courses.create({ 
       title, 
       description, 
@@ -58,6 +63,32 @@ export const createCourse = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error al crear el curso' });
   }
 }
+/**
+ * Actualizo automaticamente el estado del curso
+ */
+
+export const updateCourseStatus = async () => {
+  try {
+    const today = new Date();
+
+    // Actualizar cursos que deben estar "ACTIVO"
+    await Courses.update(
+      { status: "ACTIVO" },
+      { where: { startDate: { [Op.lte]: today }, endDate: { [Op.gte]: today }, status: "PENDIENTE" } }
+    );
+
+    // Actualizar cursos que deben estar "FINALIZADO"
+    await Courses.update(
+      { status: "FINALIZADO" },
+      { where: { endDate: { [Op.lt]: today }, status: "ACTIVO" } }
+    );
+
+    console.log("Estados de cursos actualizados correctamente");
+  } catch (error) {
+    console.error("Error al actualizar el estado de los cursos:", error);
+  }
+};
+
 
 export const getAllCourses = async (req: Request, res: Response) => {
   try {
