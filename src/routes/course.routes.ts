@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from 'express';
-import { createCourse, createCourseCategory, editCourseCategory, getActiveCoursesCount, getAllActiveCourses, getAllCourseCategories, getAllCourses, getCourseByCategory, getCourseById, getCoursesByCategory, getCoursesBySearch, getCoursesCount, getFilteredCourses, updateCourse, getCategoryById, changeCourseActive } from '../controllers/course.controller';
+import { createCourse, createCourseCategory, editCourseCategory, getActiveCoursesCount, getAllActiveCourses, getAllCourseCategories, getAllCourses, getCourseByCategory, getCourseById, getCoursesByCategory, getCoursesBySearch, getCoursesCount, getFilteredCourses, updateCourse, getCategoryById, changeCourseActive, lastestCourses } from '../controllers/course.controller';
 
 const router = Router();
 
@@ -19,5 +19,6 @@ router.get('/active-count', getActiveCoursesCount as RequestHandler);
 router.get('/filter', getFilteredCourses as RequestHandler);
 router.get('/categories/view/:id', getCategoryById as RequestHandler);
 router.put('/active/:id', changeCourseActive as RequestHandler);
+router.get('/lastest', lastestCourses as RequestHandler);
 export default router;
 
