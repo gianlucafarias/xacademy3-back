@@ -3,6 +3,9 @@ import Assist from '../models/Assist';
 import Class from '../models/Class';
 import Student from '../models/Student';
 import User from '../models/User';
+import Inscription from '../models/Inscription';
+import Payment from '../models/Payment';
+import Courses from '../models/Courses';
 
 
 /**
@@ -60,37 +63,39 @@ export const registerAttendance = async (req: Request, res: Response) => {
         const { class_id, student_id, attendance } = req.body;
         console.log(req.body);
         
-        // Verificar si la clase existe
-        const classExists = await Class.findByPk(class_id);
+        //Verifica si la clase existe
+        const classExists = await findClassById(class_id);
         if (!classExists) {
-            return res.status(404).json({
-                error: 'Clase no encontrada'
-            });
+            return res.status(404).json({ error: 'Clase no encontrada'});
         }
         
         // Verificar si el estudiante existe
-        const studentExists = await Student.findByPk(student_id);
+        const studentExists = await findStudentById(student_id);
         if (!studentExists) {
-            return res.status(404).json({ 
-                message: "Estudiante no encontrado" 
-            });        
+            return res.status(404).json({message: "Estudiante no encontrado" });        
         }
         
+        //verifico si el estudiante esta en el curso
+        const enrollment = await findEnrollment(student_id);
+        console.log(enrollment);
+        if(!enrollment){
+            return res.status(400).json({message:"El estudiante no está inscrito en el curso de esta clase "});
+        }
+        
+        //verifico si pago el curso
+        const pay = await findPayment(student_id);
+        if(!pay){
+            return res.status(400).json({message:"El estudiante no ha pagado el curso"});
+        }
+
         // Verificar si ya existe un registro de asistencia para esta clase y estudiante
-        const existingAssist = await Assist.findOne({
-            where: { 
-                class_id,
-                student_id 
-            }
-        });
+        const existingAssist = await findExistingAttendance(class_id, student_id);
         
         let assistRecord;
         
         if (existingAssist) {
             // Si existe, actualizar el registro existente
-            assistRecord = await existingAssist.update({ 
-                attendance 
-            });
+            assistRecord = await existingAssist.update({ attendance });
             
             res.status(200).json({
                 message: "Asistencia actualizada con éxito",
@@ -119,6 +124,25 @@ export const registerAttendance = async (req: Request, res: Response) => {
     }
 }
 
+const findClassById = async (class_id: string) => {
+    return await Class.findByPk(class_id);
+  };
+  
+const findStudentById = async (student_id: string) => {
+    return await Student.findByPk(student_id);
+};
+
+const findEnrollment = async (student_id: number) => {
+    return await Inscription.findOne({
+        where: { student_id}});
+};
+
+const findExistingAttendance=async(class_id: number, student_id: number) =>{
+     return await Assist.findOne({ where: { class_id, student_id } });
+}
+const findPayment= async(student_id: number) =>{
+    return await Payment.findOne({where:{student_id, status:"PAGADO"}});
+}
 export const getAssistByClassId = async (req: Request, res: Response) => {
     try {
         const { class_id } = req.params;
@@ -133,3 +157,7 @@ export const getAssistByClassId = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Error al obtener las asistencias" });
     }
 }
+
+
+
+
