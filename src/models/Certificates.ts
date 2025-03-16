@@ -38,7 +38,7 @@ const Certificate = sequelize.define("Certificate", {
 },
     {
         tableName: "certificate",
-        timestamps: true,
+        timestamps: false,
     }
 );
 
@@ -52,4 +52,5 @@ Certificate.belongsTo(Courses, {
     foreignKey: "student_id",
     as: "student",
   });
+
 export default Certificate;
