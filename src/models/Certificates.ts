@@ -45,7 +45,7 @@ const Certificate = sequelize.define("Certificate", {
 // un estudiante tiene una curso
 Certificate.belongsTo(Courses, {
     foreignKey: "course_id",
-    as: "courses",
+    as: "course",
   });
   //un estudiante tiene un estudiante
   Certificate.belongsTo(Student, {
