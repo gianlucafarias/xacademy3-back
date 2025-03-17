@@ -5,60 +5,119 @@ import PDFDocument from 'pdfkit';
 import Certificate from "../models/Certificates";
 import Student from "../models/Student";
 import Courses from "../models/Courses";
+import User from "../models/User";
+import { findCourseById } from "./course.controller";
+import { calculateAttendancePercentage, findConditionByStudentId, findStudentById, getStudentWithUser } from "./student.controller";
+import { isStudentAlreadyEnrolled } from "./inscription.controller";
 
+// Función para verificar si el estudiante está aprobado
+const isStudentApproved = async (student_id: number) => {
+    const condition = await findConditionByStudentId(student_id.toString());
+    return condition && condition.dataValues.studentCondition === 'APROBADO';
+};
+
+// Función para verificar la asistencia
+const isAttendanceSufficient = async (student_id: number) => {
+    const correctAssistance = await calculateAttendancePercentage(student_id);
+    const attendancePercentage = parseFloat(correctAssistance.percentage.toString());
+    return attendancePercentage >= 80;
+};
+
+// Función para generar el PDF
+const generatePDF = (student: any, course: any, student_id: number, course_id: number) => {
+    const doc = new PDFDocument();
+    const certificateDir = path.join(__dirname, '../../public/certificados');
+
+    // Verifica si la carpeta existe, si no, créala
+    if (!fs.existsSync(certificateDir)) {
+        fs.mkdirSync(certificateDir, { recursive: true });
+    }
+
+    const certificatePath = path.join(certificateDir, `${student_id}-${course_id}.pdf`);
+    doc.pipe(fs.createWriteStream(certificatePath));
+
+    // Personalizar contenido del certificado con los datos reales
+    doc.fontSize(25).text('Certificado de Aprobación', 180, 150);
+    doc.fontSize(25).text('Alumno:', 25, 200);
+
+    // Verificar si student.user existe antes de acceder a sus propiedades
+    if (student.dataValues.user) {
+        doc.fontSize(18).text(`${student.dataValues.user.lastname} ${student.dataValues.user.name}`, 18, 230);
+        doc.fontSize(25).text('Con DNI:', 25, 260);
+        doc.fontSize(18).text(`${student.dataValues.user.dni}`, 18, 280);
+    } else {
+        doc.fontSize(18).text('Datos del alumno no disponibles', 25, 230);
+    }
+
+    doc.fontSize(15).text('Por haber completado el curso con éxito:', 25, 310);
+    doc.fontSize(18).text(`${course.dataValues.title}`, 18, 340);
+    doc.fontSize(12).text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 15, 370);
+
+    // Agregar firma
+    doc.image(path.join(__dirname, '../../public/SELLO.png'), 50, 380, { width: 100 });
+
+    // Finalizar documento
+    doc.end();
+
+    return certificatePath;
+};
+
+// Función para guardar el certificado en la base de datos
+const saveCertificate = async (student_id: number, course_id: number, certificatePath: string) => {
+    await Certificate.create({
+        student_id,
+        course_id,
+        status: "EMITIDO",
+        issue_date: new Date(),
+        path: certificatePath,
+    });
+};
+
+// Función principal para generar el certificado
 export const generateCertificate = async (req: Request, res: Response) => {
-    const { student_id, course_id, score, status } = req.body;
-
     try {
-        // Verificar si el curso está finalizado y si el estudiante aprobó
-        const course = await Certificate.findOne({
-            where: {
-                student_id,
-                course_id,
-                status: "FINALIZADO",
-            },
-            include: [
-                {
-                    model: Student,
-                    as: "student",
-                },
-                {
-                    model: Courses,
-                    as: "courses",
-                },
-            ],
-        });
+        const { student_id, course_id } = req.body;
+        console.log(req.body);
 
-        if (!course) {
-            return res.status(400).json({ error: "El curso no está finalizado o el estudiante no aprobó el curso" });
+        // Verificar que el alumno exista
+        const student = await getStudentWithUser(student_id);
+        console.log("Datos completos del estudiante:", student);
+
+        if (!student) {
+            return res.status(404).json({ error: 'El estudiante no existe en la base de datos' });
         }
 
-        // Generar el certificado
-        const doc = new PDFDocument();
-        const certificatePath = path.join(__dirname, '../../public/certificados', `${student_id}-${course_id}.pdf`);
-        
-        doc.pipe(fs.createWriteStream(certificatePath));
+        // Verificar que el curso exista
+        const course = await findCourseById(course_id);
+        if (!course) {
+            return res.status(404).json({ error: 'El curso no fue encontrado' });
+        }
 
-        // Personalizar contenido del certificado
-        doc.image(path.join(__dirname, '../../public/LOGO.png'), 50, 50, { width: 100 });
-        doc.fontSize(25).text('Certificado de Aprobación', 180, 150);
-        doc.fontSize(15).text('Este certificado es otorgado a:', 50, 200);
-        doc.fontSize(18).text('Nombre del Estudiante', 50, 230);
-        doc.fontSize(15).text('Por haber completado el curso con éxito:', 50, 270);
-        doc.fontSize(18).text('Nombre del Curso', 50, 300);
-        doc.fontSize(12).text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 50, 340);
-        
-        // Agregar firma
-        doc.image(path.join(__dirname, '../../public/SELLO.png'), 50, 380, { width: 100 });
+        // Verificar que el estudiante esté inscrito en el curso
+        const enrollment = await isStudentAlreadyEnrolled(student_id, course_id);
+        if (!enrollment) {
+            return res.status(400).json({ error: 'El estudiante no está en este curso' });
+        }
 
-        // Finalizar documento
-        doc.end();
+        // Verificar si el estudiante está aprobado
+        if (!await isStudentApproved(student_id)) {
+            return res.status(400).json({ message: 'El estudiante no está aprobado' });
+        }
 
-        // Cambiar estado del certificado a "EMITIDO"
-        await course.update({ status: "EMITIDO" });
+        // Verificar si la asistencia es suficiente
+        if (!await isAttendanceSufficient(student_id)) {
+            return res.status(400).json({ error: 'La asistencia no es la correcta' });
+        }
 
-        // Devolver la ruta del certificado generado
+        // Generar el certificado en PDF
+        const certificatePath = generatePDF(student, course, student_id, course_id);
+
+        // Guardar el certificado en la base de datos
+        await saveCertificate(student_id, course_id, certificatePath);
+
+        // Responder con éxito
         res.json({ message: "Certificado generado exitosamente", certificate: certificatePath });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Hubo un error al generar el certificado" });

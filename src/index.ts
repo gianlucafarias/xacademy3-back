@@ -12,13 +12,10 @@ import studentRoutes from './routes/student.routes';
 import inscritionRoutes from './routes/inscription.routes';
 import PaymentRoutes from './routes/payment.routes';
 import newsRoutes from './routes/news.routes';
-<<<<<<< HEAD
-import cron from 'node-cron';
 import {updateCourseStatus} from './controllers/course.controller';
-=======
 import certificateRoutes from "./routes/certificate.routes";
+import cron from 'node-cron';
 
->>>>>>> feature/certificates
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;

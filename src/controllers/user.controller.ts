@@ -59,3 +59,13 @@ export const getAllUsers = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error al obtener la información', error });
     }
 }
+
+export const findUserById = async (userId: number) => {
+  try {
+    const user = await User.findByPk(userId);
+    return user;
+  } catch (error) {
+    console.error('Error al buscar el usuario:', error);
+    throw new Error('Error al obtener el usuario');
+  }
+};
