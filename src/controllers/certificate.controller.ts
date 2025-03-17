@@ -57,39 +57,41 @@ const generatePDF = (student: any, course: any, student_id: number, course_id: n
         doc.end();
         return certificatePath;
     }
-        doc.moveDown(0.5);
-        doc.fontSize(22).fillColor('black')
-       .text(`Se certifica que:`, { align: 'center' })
-       .moveDown(0.5)
-       .font('Helvetica-Bold').fontSize(32)
-       .text(`${student.dataValues.user.lastname} ${student.dataValues.user.name}`, { align: 'center' })
-       .moveDown(0.5)
-       .font('Helvetica').fontSize(22)
-       .text(`Con DNI: ${student.dataValues.user.dni}`, { align: 'center' });
 
-       if (!course || !course.dataValues) {
+    doc.moveDown(0.5);
+    doc.fontSize(22).fillColor('black')
+    .text(`Se certifica que:`, { align: 'center' })
+    .moveDown(0.5)
+    .font('Helvetica-Bold').fontSize(32)
+    .text(`${student.dataValues.user.lastname} ${student.dataValues.user.name}`, { align: 'center' })
+    .moveDown(0.5)
+    .font('Helvetica').fontSize(22)
+    .text(`Con DNI: ${student.dataValues.user.dni}`, { align: 'center' });
+
+    // Verificar si el curso existe antes de acceder a sus propiedades
+    if (!course || !course.dataValues) {
         doc.fontSize(20).fillColor('red').text("Error: Datos del curso no disponibles", { align: 'center' });
         doc.end();
         return certificatePath;
-        }
-        doc.moveDown(1);
-        doc.font('Helvetica-Bold').fontSize(22)
-       .text(`Ha completado exitosamente el curso:`, { align: 'center' })
-       .moveDown(0.5)
-       .font('Helvetica').fontSize(26).fillColor('#336699')
-       .text(`${course.dataValues.title}`, { align: 'center' });
+    }
 
-       doc.moveDown(1);
-       doc.font('Helvetica').fontSize(18).fillColor('black')
-          .text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, { align: 'center' });
+    doc.moveDown(1);
+    doc.font('Helvetica-Bold').fontSize(22)
+    .text(`Ha completado exitosamente el curso:`, { align: 'center' })
+    .moveDown(0.5)
+    .font('Helvetica').fontSize(26).fillColor('#336699')
+    .text(`${course.dataValues.title}`, { align: 'center' });
 
-          const selloPath = path.join(__dirname, '../../public/SELLO.png');
-          if (fs.existsSync(selloPath)) {
-              const selloX = 80; 
-              const selloY = 420; 
+    doc.moveDown(1);
+    doc.font('Helvetica').fontSize(18).fillColor('black')
+    .text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, { align: 'center' });
 
-              doc.image(selloPath, selloX, selloY, { width: 160 });
-          }
+    const selloPath = path.join(__dirname, '../../public/SELLO.png');
+    if (fs.existsSync(selloPath)) {
+        const selloX = 80; 
+        const selloY = 420; 
+            doc.image(selloPath, selloX, selloY, { width: 160 });
+    }
 
     // Finalizar documento
     doc.end();
@@ -158,3 +160,29 @@ export const generateCertificate = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Hubo un error al generar el certificado" });
     }
 };
+
+export const getCerticateById = async (req: Request, res: Response) => {
+    const student_id = req.params.student_id;
+  
+    try {
+      const certificados = await Certificate.findAll({
+        where: { student_id },
+        include: [
+          {
+            model: Courses,
+            as: 'course', 
+            attributes: ['title'], 
+          },
+        ],
+      });
+  
+      if (!certificados.length) {
+        return res.status(404).json({ error: 'No se encontraron certificados para este estudiante' });
+      }
+  
+      res.json({ certificados });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Hubo un error al obtener los certificados' });
+    }
+  };
