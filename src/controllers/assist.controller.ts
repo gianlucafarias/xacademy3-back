@@ -124,11 +124,11 @@ export const registerAttendance = async (req: Request, res: Response) => {
     }
 }
 
-const findClassById = async (class_id: string) => {
+const findClassById = async (class_id: number) => {
     return await Class.findByPk(class_id);
   };
   
-const findStudentById = async (student_id: string) => {
+const findStudentById = async (student_id: number) => {
     return await Student.findByPk(student_id);
 };
 

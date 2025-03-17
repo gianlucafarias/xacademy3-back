@@ -226,7 +226,7 @@ const getValidStudent = async (userId: number, courseId: number, birthday: strin
 /**
  * Verifico si el estudiante ya está inscrito en el curso
  */
-const isStudentAlreadyEnrolled = async (studentId: number, courseId: number): Promise<boolean> => {
+export const isStudentAlreadyEnrolled = async (studentId: number, courseId: number): Promise<boolean> => {
     const existingInscription = await Inscription.findOne({ where: { student_id: studentId, course_id: courseId } });
     return !!existingInscription;
 };
