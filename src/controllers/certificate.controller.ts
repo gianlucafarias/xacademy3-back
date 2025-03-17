@@ -25,7 +25,7 @@ const isAttendanceSufficient = async (student_id: number) => {
 
 // Función para generar el PDF
 const generatePDF = (student: any, course: any, student_id: number, course_id: number) => {
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ size: 'A4', layout: 'landscape' });
     const certificateDir = path.join(__dirname, '../../public/certificados');
 
     // Verifica si la carpeta existe, si no, créala
@@ -36,25 +36,60 @@ const generatePDF = (student: any, course: any, student_id: number, course_id: n
     const certificatePath = path.join(certificateDir, `${student_id}-${course_id}.pdf`);
     doc.pipe(fs.createWriteStream(certificatePath));
 
-    // Personalizar contenido del certificado con los datos reales
-    doc.fontSize(25).text('Certificado de Aprobación', 180, 150);
-    doc.fontSize(25).text('Alumno:', 25, 200);
-
-    // Verificar si student.user existe antes de acceder a sus propiedades
-    if (student.dataValues.user) {
-        doc.fontSize(18).text(`${student.dataValues.user.lastname} ${student.dataValues.user.name}`, 18, 230);
-        doc.fontSize(25).text('Con DNI:', 25, 260);
-        doc.fontSize(18).text(`${student.dataValues.user.dni}`, 18, 280);
-    } else {
-        doc.fontSize(18).text('Datos del alumno no disponibles', 25, 230);
+    const bgPath = path.join(__dirname, '../../public/bg.jpg');
+    if (fs.existsSync(bgPath)) {
+        doc.image(bgPath, 0, 0, { width: 842, height: 595 });
     }
 
-    doc.fontSize(15).text('Por haber completado el curso con éxito:', 25, 310);
-    doc.fontSize(18).text(`${course.dataValues.title}`, 18, 340);
-    doc.fontSize(12).text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 15, 370);
+    const logoPath = path.join(__dirname, '../../public/LOGO.png');
+    if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 620, 20, { width: 140 });
+    }
 
-    // Agregar firma
-    doc.image(path.join(__dirname, '../../public/SELLO.png'), 50, 380, { width: 100 });
+    doc.font('Helvetica-Bold')
+    .fontSize(38)
+    .fillColor('#003366')
+    .text('CERTIFICADO DE APROBACIÓN', 0, 140, { align: 'center' });
+
+    // Verificar si student.user existe antes de acceder a sus propiedades
+    if (!student || !student.dataValues || !student.dataValues.user) {
+        doc.fontSize(20).fillColor('red').text("Error: Datos del estudiante no disponibles", { align: 'center' });
+        doc.end();
+        return certificatePath;
+    }
+        doc.moveDown(0.5);
+        doc.fontSize(22).fillColor('black')
+       .text(`Se certifica que:`, { align: 'center' })
+       .moveDown(0.5)
+       .font('Helvetica-Bold').fontSize(32)
+       .text(`${student.dataValues.user.lastname} ${student.dataValues.user.name}`, { align: 'center' })
+       .moveDown(0.5)
+       .font('Helvetica').fontSize(22)
+       .text(`Con DNI: ${student.dataValues.user.dni}`, { align: 'center' });
+
+       if (!course || !course.dataValues) {
+        doc.fontSize(20).fillColor('red').text("Error: Datos del curso no disponibles", { align: 'center' });
+        doc.end();
+        return certificatePath;
+        }
+        doc.moveDown(1);
+        doc.font('Helvetica-Bold').fontSize(22)
+       .text(`Ha completado exitosamente el curso:`, { align: 'center' })
+       .moveDown(0.5)
+       .font('Helvetica').fontSize(26).fillColor('#336699')
+       .text(`${course.dataValues.title}`, { align: 'center' });
+
+       doc.moveDown(1);
+       doc.font('Helvetica').fontSize(18).fillColor('black')
+          .text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, { align: 'center' });
+
+          const selloPath = path.join(__dirname, '../../public/SELLO.png');
+          if (fs.existsSync(selloPath)) {
+              const selloX = 80; 
+              const selloY = 420; 
+
+              doc.image(selloPath, selloX, selloY, { width: 160 });
+          }
 
     // Finalizar documento
     doc.end();
