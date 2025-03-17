@@ -10,6 +10,18 @@ import { findCourseById } from "./course.controller";
 import { calculateAttendancePercentage, findConditionByStudentId, findStudentById, getStudentWithUser } from "./student.controller";
 import { isStudentAlreadyEnrolled } from "./inscription.controller";
 
+
+//verifico si ya se emitio el certificado
+const isCertificateAlreadyIssued=async(student_id:number, course_id:number)=>{
+    const existingCertificate = await Certificate.findOne({
+        where: {
+            student_id,
+            course_id,
+            status: "EMITIDO"
+        }
+    })
+    return existingCertificate !==null;
+}
 // Función para verificar si el estudiante está aprobado
 const isStudentApproved = async (student_id: number) => {
     const condition = await findConditionByStudentId(student_id.toString());
@@ -77,7 +89,11 @@ const saveCertificate = async (student_id: number, course_id: number, certificat
 export const generateCertificate = async (req: Request, res: Response) => {
     try {
         const { student_id, course_id } = req.body;
-        console.log(req.body);
+        
+        //verificar si ya se emitio un certificado al estudiante
+        if(await isCertificateAlreadyIssued(student_id, course_id)){
+            return res.status(400).json({error:"Ya se emitio un certificado al estudiante"});
+        }
 
         // Verificar que el alumno exista
         const student = await getStudentWithUser(student_id);
