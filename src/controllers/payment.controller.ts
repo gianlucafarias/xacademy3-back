@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import Payment from "../models/Payment";
 import Student from "../models/Student";
 import Courses from "../models/Courses";
-import { getStudentById } from "./student.controller";
-import { findCourseById } from "./course.controller";
 
 /**
  * Muestro todos los pagos
