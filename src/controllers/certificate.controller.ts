@@ -37,36 +37,58 @@ const isAttendanceSufficient = async (student_id: number) => {
 
 // Función para generar el PDF
 const generatePDF = (student: any, course: any,res:Response) => {
-    const doc = new PDFDocument();
-    
-    // Configurar las cabeceras para la descarga
+    const doc = new PDFDocument({ size: "A4", layout: "landscape" });
+
+    // Configura las cabeceras para indicar que es un archivo adjunto (descarga)
     res.setHeader("Content-Disposition", `attachment; filename=Certificado-${student.dataValues.user.dni}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
 
-    // Enviar el PDF directamente en la respuesta
+    // Envía el PDF directamente en la respuesta para la descarga
     doc.pipe(res);
 
-    // Personalizar contenido del certificado con los datos reales
-    doc.fontSize(25).text('Certificado de Aprobación', 180, 150);
-    doc.fontSize(25).text('Alumno:', 25, 200);
+    const resourcesPath = path.resolve(__dirname, "../../public");
+    const images = {
+        bg: path.join(resourcesPath, "bg.jpg"),
+        logo: path.join(resourcesPath, "LOGO.png"),
+        sello: path.join(resourcesPath, "SELLO.png"),
+    };
 
-    // Verificar si student.user existe antes de acceder a sus propiedades
-    if (student.dataValues.user) {
-        doc.fontSize(18).text(`${student.dataValues.user.lastname} ${student.dataValues.user.name}`, 18, 230);
-        doc.fontSize(25).text('Con DNI:', 25, 260);
-        doc.fontSize(18).text(`${student.dataValues.user.dni}`, 18, 280);
-    } else {
-        doc.fontSize(18).text('Datos del alumno no disponibles', 25, 230);
+    // Agregar la imagen de fondo
+    if (images.bg) {
+        doc.image(images.bg, 0, 0, { width: 842, height: 595 });
+    }
+    // Agregar el logo
+    if (images.logo) {
+        doc.image(images.logo, 620, 20, { width: 140 });
     }
 
-    doc.fontSize(15).text('Por haber completado el curso con éxito:', 25, 310);
-    doc.fontSize(18).text(`${course.dataValues.title}`, 18, 340);
-    doc.fontSize(12).text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 15, 370);
+    // Título del certificado
+    doc.font("Helvetica-Bold").fontSize(38).fillColor("#003366").text("CERTIFICADO DE APROBACIÓN", 0, 140, { align: "center" });
 
-    // Agregar firma
-    doc.image(path.join(__dirname, '../../public/SELLO.png'), 50, 380, { width: 100 });
+    if (!student?.dataValues?.user) {
+        return renderError(doc, "Datos del estudiante no disponibles");
+    }
 
-    // Finalizar documento
+    const { user } = student.dataValues;
+
+    doc.moveDown(0.5).fontSize(22).fillColor("black").text(`Se certifica que:`, { align: "center" })
+        .moveDown(0.5)
+        .font("Helvetica-Bold").fontSize(32).text(`${user.lastname} ${user.name}`, { align: "center" })
+        .moveDown(0.5)
+        .font("Helvetica").fontSize(22).text(`Con DNI: ${user.dni}`, { align: "center" });
+
+    if (!course?.dataValues) {
+        return renderError(doc, "Datos del curso no disponibles");
+    }
+
+    doc.moveDown(1).font("Helvetica-Bold").fontSize(22).text(`Ha completado exitosamente el curso:`, { align: "center" })
+        .moveDown(0.5)
+        .font("Helvetica").fontSize(26).fillColor("#336699").text(`${course.dataValues.title}`, { align: "center" });
+
+    doc.moveDown(1).font("Helvetica").fontSize(18).fillColor("black").text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, { align: "center" });
+
+    if (fs.existsSync(images.sello)) doc.image(images.sello, 80, 420, { width: 160 });
+
     doc.end();
 };
 
@@ -129,3 +151,7 @@ export const generateCertificate = async (req: Request, res: Response) => {
         }
     }
 };
+
+function renderError(doc: PDFKit.PDFDocument, arg1: string) {
+    throw new Error("Function not implemented.");
+}
