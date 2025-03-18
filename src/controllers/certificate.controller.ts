@@ -36,17 +36,15 @@ const isAttendanceSufficient = async (student_id: number) => {
 };
 
 // Función para generar el PDF
-const generatePDF = (student: any, course: any, student_id: number, course_id: number) => {
+const generatePDF = (student: any, course: any,res:Response) => {
     const doc = new PDFDocument();
-    const certificateDir = path.join(__dirname, '../../public/certificados');
+    
+    // Configurar las cabeceras para la descarga
+    res.setHeader("Content-Disposition", `attachment; filename=Certificado-${student.dataValues.user.dni}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
 
-    // Verifica si la carpeta existe, si no, créala
-    if (!fs.existsSync(certificateDir)) {
-        fs.mkdirSync(certificateDir, { recursive: true });
-    }
-
-    const certificatePath = path.join(certificateDir, `${student_id}-${course_id}.pdf`);
-    doc.pipe(fs.createWriteStream(certificatePath));
+    // Enviar el PDF directamente en la respuesta
+    doc.pipe(res);
 
     // Personalizar contenido del certificado con los datos reales
     doc.fontSize(25).text('Certificado de Aprobación', 180, 150);
@@ -70,20 +68,9 @@ const generatePDF = (student: any, course: any, student_id: number, course_id: n
 
     // Finalizar documento
     doc.end();
-
-    return certificatePath;
 };
 
-// Función para guardar el certificado en la base de datos
-const saveCertificate = async (student_id: number, course_id: number, certificatePath: string) => {
-    await Certificate.create({
-        student_id,
-        course_id,
-        status: "EMITIDO",
-        issue_date: new Date(),
-        path: certificatePath,
-    });
-};
+
 
 // Función principal para generar el certificado
 export const generateCertificate = async (req: Request, res: Response) => {
@@ -124,18 +111,21 @@ export const generateCertificate = async (req: Request, res: Response) => {
         if (!await isAttendanceSufficient(student_id)) {
             return res.status(400).json({ error: 'La asistencia no es la correcta' });
         }
+         // Guardar el certificado en la base de datos
+         await Certificate.create({
+            student_id,
+            course_id,
+            status: "EMITIDO",
+            issue_date: new Date(),
+        });
 
-        // Generar el certificado en PDF
-        const certificatePath = generatePDF(student, course, student_id, course_id);
-
-        // Guardar el certificado en la base de datos
-        await saveCertificate(student_id, course_id, certificatePath);
-
-        // Responder con éxito
-        res.json({ message: "Certificado generado exitosamente", certificate: certificatePath });
+        // Generar el certificado en PDF y enviarlo como descarga
+        generatePDF(student, course, res);
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Hubo un error al generar el certificado" });
+        if(!res.headersSent){
+            res.status(500).send("Error interno del servidor");
+        }
     }
 };
