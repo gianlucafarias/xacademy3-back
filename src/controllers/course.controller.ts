@@ -51,7 +51,7 @@ export const createCourse = async (req: Request, res: Response) => {
       status,
       modalidad,
       image_url,
-      isActive: true,
+      isActive: status !== 'FINALIZADO',
       teacher_id,
       category_id
     });
@@ -379,7 +379,7 @@ export const changeCourseActive = async (req: Request, res: Response) => {
 export const lastestCourses = async (req: Request, res: Response)=>{
   try {
     const lastestCourses = await Courses.findAll({
-      where:{status:'ACTIVO'},
+      where:{isActive:true},
       order:[['createdAt', 'DESC']],
       limit:3
     });
