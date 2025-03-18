@@ -185,9 +185,7 @@ export const getPaymentsByStudentIdAndStatus = async (req: Request, res: Respons
     });
 
     if (payments.length === 0) {
-      return res.status(404).json({
-        error: `No se encontraron pagos con el estado '${status}' para el estudiante.`,
-      });
+      return res.status(200).json({ payments: [] }); 
     }
 
     res.status(200).json({ payments });
