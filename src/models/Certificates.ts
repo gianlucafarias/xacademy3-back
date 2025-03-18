@@ -34,6 +34,10 @@ const Certificate = sequelize.define("Certificate", {
     status: {
         type: DataTypes.ENUM("PENDIENTE", "EMITIDO", "REVOCADO"),
         defaultValue: "PENDIENTE",
+    },
+    file_path: {
+        type: DataTypes.STRING,
+        allowNull:true
     }
 },
     {
