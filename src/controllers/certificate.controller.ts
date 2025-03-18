@@ -99,10 +99,10 @@ export const generateCertificate = async (req: Request, res: Response) => {
     try {
         const { student_id, course_id } = req.body;
         
-        //verificar si ya se emitio un certificado al estudiante
-        if(await isCertificateAlreadyIssued(student_id, course_id)){
-            return res.status(400).json({error:"Ya se emitio un certificado al estudiante"});
-        }
+        // //verificar si ya se emitio un certificado al estudiante
+        // if(await isCertificateAlreadyIssued(student_id, course_id)){
+        //     return res.status(400).json({error:"Ya se emitio el certificado al estudiante de este curso"});
+        // }
 
         // Verificar que el alumno exista
         const student = await getStudentWithUser(student_id);
@@ -155,3 +155,29 @@ export const generateCertificate = async (req: Request, res: Response) => {
 function renderError(doc: PDFKit.PDFDocument, arg1: string) {
     throw new Error("Function not implemented.");
 }
+
+export const getCerticateById = async (req: Request, res: Response) => {
+    const student_id = req.params.student_id;
+  
+    try {
+      const certificados = await Certificate.findAll({
+        where: { student_id },
+        include: [
+          {
+            model: Courses,
+            as: 'course', 
+            attributes: ['title'], 
+          },
+        ],
+      });
+  
+      if (!certificados.length) {
+        return res.status(404).json({ error: 'No se encontraron certificados para este estudiante' });
+      }
+  
+      res.json({ certificados });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Hubo un error al obtener los certificados' });
+    }
+  };
