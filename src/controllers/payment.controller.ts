@@ -185,14 +185,40 @@ export const getPaymentsByStudentIdAndStatus = async (req: Request, res: Respons
     });
 
     if (payments.length === 0) {
-      return res.status(404).json({
-        error: `No se encontraron pagos con el estado '${status}' para el estudiante.`,
-      });
+      return res.status(200).json({ payments: [] }); 
     }
 
     res.status(200).json({ payments });
   } catch (error) {
     console.error('Error al obtener los pagos por estudiante y estado:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+/**
+ * Obtener estado del pago de un curso para un estudiante
+ */
+export const getCoursePaymentStatus = async (req: Request, res: Response) => {
+  const { student_id, course_id } = req.params;
+
+  try {
+    // Buscar el pago del estudiante para este curso
+    const payment = await Payment.findOne({
+      where: {
+        student_id: student_id,
+        course_id: course_id,
+      },
+    });
+
+    // Si no se encontró un pago, el estado es "Pendiente"
+    if (!payment) {
+      return res.status(200).json({ status: "PENDIENTE" });
+    }
+
+    // Si se encontró un pago, devolver el estado
+    return res.status(200).json({ status: "PAGADO" });
+  } catch (error) {
+    console.error("Error al obtener el estado del pago:", error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
