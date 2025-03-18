@@ -251,7 +251,7 @@ export const getStudentWithUser = async (student_id: string) => {
       include: [
         {
           model: User,
-          as: 'user', // Debe coincidir con el alias en `belongsTo`
+          as: 'user', 
           attributes: ['name', 'lastname', 'dni']
         }
       ]
