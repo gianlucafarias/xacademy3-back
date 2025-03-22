@@ -392,16 +392,26 @@ export const findCourseById = async (courseId: number) => {
 
 export const changeCourseActive = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { isActive } = req.body;
-  console.log(req.body);
+  const { isActive, active } = req.body;
+  
   try {
     const course = await Courses.findByPk(id);
     if (!course) {
       return res.status(404).json({ error: 'Curso no encontrado' });
     }
-    await course.update({ isActive, status: isActive ? 'ACTIVO' : 'PENDIENTE' });
-    res.status(200).json(course);
+
+    const newActiveState = isActive !== undefined ? isActive : active;
+    
+    // Actualizar el curso con el nuevo estado
+    await course.update({ 
+      isActive: newActiveState, 
+      status: newActiveState ? 'ACTIVO' : 'PENDIENTE' 
+    });
+
+    const updatedCourse = await Courses.findByPk(id);
+    res.status(200).json(updatedCourse);
   } catch (error) {
+    console.error('Error al cambiar el estado del curso:', error);
     res.status(500).json({ error: 'Error al cambiar el estado del curso' });
   }
 }
