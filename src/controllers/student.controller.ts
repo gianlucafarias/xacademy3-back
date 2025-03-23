@@ -4,11 +4,14 @@ import Courses from "../models/Courses";
 import User from "../models/User";
 import Class from "../models/Class";
 import Assist from "../models/Assist";
+import { AuthRequest } from "../middleware/authMiddleware";
 
 //Mostrar todos los estudiantes
-export const getAllStudents = async (req: Request, res: Response) => {
+export const getAllStudents = async (req: AuthRequest, res: Response) => {
   try {
-    const students = await Student.findAll();
+    const students = await Student.findAll({
+      attributes: { exclude: ['id', 'user_id'] },
+    });
     console.log(students);
     res.status(200).json(students);
   } catch (error) {
@@ -25,7 +28,9 @@ export const getAllStudents = async (req: Request, res: Response) => {
 
 export const findStudentById = async (student_id: string) => {
   try {
-    const student = await Student.findByPk(student_id);
+    const student = await Student.findByPk(student_id, {
+      attributes: { exclude: ['id', 'user_id'] }, // Excluir los campos id y usuario_id
+    });
     return student;
   } catch (error) {
     console.error('Error al buscar el estudiante:', error);
@@ -34,13 +39,23 @@ export const findStudentById = async (student_id: string) => {
 };
 
 //Mostrar estudiantes por id
-export const getStudentById = async (req: Request, res: Response) => {
+export const getStudentById = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
-    const student = findStudentById(id);
-    if (!student) {
-      return res.status(404).json({ error: 'Curso no encontrado' });
+    // Verificar si el usuario está autenticado
+    if (!req.user) {
+      return res.status(401).json({ error: 'No estás autenticado' });
     }
+
+    // Obtener el estudiante
+    const student = await findStudentById(id);
+
+    // Validar si se encontró el estudiante
+    if (!student) {
+      return res.status(404).json({ error: 'Estudiante no encontrado' });
+    }
+
+    // Devolver la información del estudiante
     res.status(200).json(student);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener el curso' });
@@ -179,65 +194,83 @@ export const getConditionByStudentId = async (req: Request, res: Response) => {
 }
 
 /**
- * Obtener el porcentaje de asistencias de un estudiante
+ * Calcular el porcentaje de asistencias de un estudiante
  */
 export const calculateAttendancePercentage = async (studentId: number) => {
-  // Verifico el estudiante
+  // Verifico si el estudiante existe
   const student = await findStudentById(studentId.toString());
   if (!student) {
-      throw new Error("El estudiante no encontrado");
+    throw new Error("Estudiante no encontrado");
   }
 
-  // Contar el total de las clases que el estudiante asistió
+  // Contar el total de clases registradas
   const totalClases = await Assist.count({
-      where: { student_id: studentId }
+    where: { student_id: studentId },
   });
 
   if (totalClases === 0) {
-      return {
-          id: studentId,
-          percentage: 0,
-          message: "El estudiante no tiene asistencia registrada",
-          attended: 0,
-          total: totalClases
-      };
+    return {
+      id: studentId,
+      percentage: "0%",
+      message: "El estudiante no tiene asistencia registrada",
+      attended: 0,
+      total: totalClases,
+    };
   }
 
-  // Contar la cantidad de clases que el estudiante asistió
+  // Contar las clases asistidas
   const attendedClases = await Assist.count({
-      where: { student_id: studentId, attendance: 1 }
+    where: { student_id: studentId, attendance: 1 },
   });
 
   // Calcular el porcentaje
   const attendancePercentage = (attendedClases / totalClases) * 100;
 
   return {
-      id: studentId,
-      percentage: attendancePercentage.toFixed(2) + "%",
-      attended: attendedClases,
-      total: totalClases
+    id: studentId,
+    percentage: attendancePercentage.toFixed(2) + "%",
+    attended: attendedClases,
+    total: totalClases,
   };
 };
 
+/**
+ * Verificar si la clase pertenece a un curso
+ */
+export const verifyClassBelongsToCourse = async (classId: number) => {
+  const classData = await Class.findOne({
+    where: { id: classId },
+    attributes: ["id", "course_id"], // Solo los campos necesarios
+  });
+
+  if (!classData) {
+    throw new Error("La clase no existe");
+  }
+
+  return classData.dataValues.course_id; // Retorna el curso al que pertenece la clase
+};
+
+/**
+ * Endpoint para obtener el porcentaje de asistencia del estudiante
+ */
 export const getAttendancePercentage = async (req: Request, res: Response) => {
   try {
-      const { id } = req.params;
-      const studentId = parseInt(id, 10);
+    const { id } = req.params;
+    const studentId = parseInt(id, 10);
 
-      if (isNaN(studentId)) {
-          return res.status(400).json({ message: "ID de estudiante inválido" });
-      }
+    if (isNaN(studentId)) {
+      return res.status(400).json({ message: "ID de estudiante inválido" });
+    }
 
-      // Llamar a la función que calcula el porcentaje de asistencia
-      const result = await calculateAttendancePercentage(studentId);
+    // Calcular el porcentaje de asistencia
+    const result = await calculateAttendancePercentage(studentId);
 
-      res.status(200).json(result);
-
+    res.status(200).json(result);
   } catch (error) {
-      console.error("El error al obtener el porcentaje de asistencia", error);
-      res.status(500).json({
-          error: "Error al obtener los porcentajes"
-      });
+    console.error("Error al calcular el porcentaje de asistencia:", error);
+    res.status(500).json({
+      error: "Error interno al procesar la solicitud",
+    });
   }
 };
 

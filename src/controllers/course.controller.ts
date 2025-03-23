@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import  Courses  from '../models/Courses';
 import CoursesCategory from '../models/CoursesCategory';
 import { Op} from 'sequelize';
+import { AuthRequest } from "../middleware/authMiddleware";
 
 export const createCourse = async (req: Request, res: Response) => {
   const { 
@@ -164,7 +165,8 @@ export const getCategoryById = async (req: Request, res: Response) => {
   }
 }
 
-export const updateCourse = async (req: Request, res: Response) => {
+
+export const updateCourse = async (req: AuthRequest, res: Response) => {
   const { id } = req.params; // Obtener el ID del curso desde los parámetros de la URL
   const {
     title,
@@ -183,8 +185,14 @@ export const updateCourse = async (req: Request, res: Response) => {
   console.log('Recibiendo image_url:', image_url);
 
   try {
+    // Verificar si el usuario está autenticado
+    if (!req.user) {
+      return res.status(401).json({ error: 'No estás autenticado' });
+    }
     // Buscar si el curso existe
-    const course = await Courses.findByPk(id);
+    const course = await Courses.findByPk(id, {
+      attributes: { exclude: ['id', 'category_id'] }, // Excluir los campos id y usuario_id
+    });
 
     if (!course) {
       return res.status(404).json({ error: 'Curso no encontrado' });
@@ -380,7 +388,8 @@ export const getFilteredCourses = async (req: Request, res: Response) => {
   }
 };
 
-export const findCourseById = async (courseId: number) => {
+
+export const findCourseById = async (courseId: string) => {
   try {
     const course = await Courses.findByPk(courseId);
     return course;
