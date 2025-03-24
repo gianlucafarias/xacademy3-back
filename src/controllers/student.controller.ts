@@ -181,55 +181,104 @@ export const getConditionByStudentId = async (req: Request, res: Response) => {
 /**
  * Obtener el porcentaje de asistencias de un estudiante
  */
-export const calculateAttendancePercentage = async (studentId: number) => {
-  // Verifico el estudiante
+export const calculateAttendancePercentage = async (studentId: number,  courseId: number) => {
+  // Verifico si el estudiante existe
   const student = await findStudentById(studentId.toString());
   if (!student) {
       throw new Error("El estudiante no encontrado");
   }
 
-  // Contar el total de las clases que el estudiante asistió
-  const totalClases = await Assist.count({
-      where: { student_id: studentId }
+  const classesInCourse = await Class.findAll({
+    where: { course_id: courseId },
+    attributes: ["id"],
   });
 
-  if (totalClases === 0) {
-      return {
-          id: studentId,
-          percentage: 0,
-          message: "El estudiante no tiene asistencia registrada",
-          attended: 0,
-          total: totalClases
-      };
+  console.log("Clases en el curso:", classesInCourse);
+
+  if (!classesInCourse.length) {
+    throw new Error("No hay clases registradas para este curso");
   }
 
-  // Contar la cantidad de clases que el estudiante asistió
-  const attendedClases = await Assist.count({
-      where: { student_id: studentId, attendance: 1 }
+  const classIds = classesInCourse.map(c => c.get("id"));
+  console.log("Class IDs:", classIds); 
+
+
+  // Contar el total de clases registradas
+  const totalClasesInCourse= await Assist.count({
+    where: { student_id: studentId, class_id: classIds },
   });
 
+  console.log("Total de clases registradas:", totalClasesInCourse);
+
+  if (totalClasesInCourse === 0) {
+    return {
+      id: studentId,
+      courseId,
+      percentage: "0%",
+      message: "El estudiante no tiene asistencia registrada",
+      attended: 0,
+      total: classIds.length,
+    };
+  }
+
+  // Contar las clases asistidas
+  const attendedClasesInCourse = await Assist.count({
+    where: { student_id: studentId, class_id: classIds, attendance: 1 },
+  });
+
+  console.log("Clases asistidas (attendance = 1)::", attendedClasesInCourse);
+
   // Calcular el porcentaje
-  const attendancePercentage = (attendedClases / totalClases) * 100;
+  const attendancePercentage = (attendedClasesInCourse / totalClasesInCourse) * 100;
+
+
+    // Verificar qué valores hay en la tabla Assist para este estudiante
+    const assistRecords = await Assist.findAll({
+      where: { student_id: studentId, class_id: classIds },
+      attributes: ["class_id", "attendance"], // Ver los registros de asistencia y los class_id
+    });
+    console.log("Registros de asistencia del estudiante:", assistRecords);
 
   return {
-      id: studentId,
-      percentage: attendancePercentage.toFixed(2) + "%",
-      attended: attendedClases,
-      total: totalClases
+    id: studentId,
+    courseId,
+    percentage: attendancePercentage.toFixed(2) + "%",
+    attended: attendedClasesInCourse,
+    total: totalClasesInCourse,
   };
 };
 
-export const getAttendancePercentage = async (req: Request, res: Response) => {
+/**
+ * Verificar si la clase pertenece a un curso
+ */
+export const verifyClassBelongsToCourse = async (classId: number) => {
+  const classData = await Class.findOne({
+    where: { id: classId },
+    attributes: ["id", "course_id"], // Solo los campos necesarios
+  });
+
+  if (!classData) {
+    throw new Error("La clase no existe");
+  }
+
+  return classData.dataValues.course_id; // Retorna el curso al que pertenece la clase
+};
+
+/**
+ * Endpoint para obtener el porcentaje de asistencia del estudiante
+ */
+export const getAttendancePercentageByCourse = async (req: Request, res: Response) => {
   try {
-      const { id } = req.params;
-      const studentId = parseInt(id, 10);
+    const { studentId, courseId } = req.params;
+    const studentIdNum = parseInt(studentId, 10);
+    const courseIdNum = parseInt(courseId, 10);
 
-      if (isNaN(studentId)) {
-          return res.status(400).json({ message: "ID de estudiante inválido" });
-      }
+    if (isNaN(studentIdNum)) {
+      return res.status(400).json({ message: "ID de estudiante inválido" });
+    }
 
-      // Llamar a la función que calcula el porcentaje de asistencia
-      const result = await calculateAttendancePercentage(studentId);
+    // Calcular el porcentaje de asistencia
+    const result = await calculateAttendancePercentage(studentIdNum, courseIdNum);
 
       res.status(200).json(result);
 

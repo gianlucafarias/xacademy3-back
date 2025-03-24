@@ -29,8 +29,8 @@ const isStudentApproved = async (student_id: number) => {
 };
 
 // Función para verificar la asistencia
-const isAttendanceSufficient = async (student_id: number) => {
-    const correctAssistance = await calculateAttendancePercentage(student_id);
+const isAttendanceSufficient = async (student_id: number, course_id: number) => {
+    const correctAssistance = await calculateAttendancePercentage(student_id, course_id);
     const attendancePercentage = parseFloat(correctAssistance.percentage.toString());
     return attendancePercentage >= 80;
 };
@@ -130,7 +130,7 @@ export const generateCertificate = async (req: Request, res: Response) => {
         }
 
         // Verificar si la asistencia es suficiente
-        if (!await isAttendanceSufficient(student_id)) {
+        if (!await isAttendanceSufficient(student_id, course_id)) {
             return res.status(400).json({ error: 'La asistencia no es la correcta' });
         }
          // Guardar el certificado en la base de datos
