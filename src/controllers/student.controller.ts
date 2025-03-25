@@ -181,7 +181,7 @@ export const getConditionByStudentId = async (req: Request, res: Response) => {
 /**
  * Obtener el porcentaje de asistencias de un estudiante
  */
-export const calculateAttendancePercentage = async (studentId: number,  courseId: number) => {
+export const calculateAttendancePercentageByCourse = async (studentId: number,  courseId: number) => {
   // Verifico si el estudiante existe
   const student = await findStudentById(studentId.toString());
   if (!student) {
@@ -196,12 +196,16 @@ export const calculateAttendancePercentage = async (studentId: number,  courseId
   console.log("Clases en el curso:", classesInCourse);
 
   if (!classesInCourse.length) {
-    throw new Error("No hay clases registradas para este curso");
+    return { 
+      id: studentId, 
+      courseId, 
+      percentage: "0%", 
+      attended: 0, 
+      total: 0 
+    };  
   }
 
   const classIds = classesInCourse.map(c => c.get("id"));
-  console.log("Class IDs:", classIds); 
-
 
   // Contar el total de clases registradas
   const totalClasesInCourse= await Assist.count({
@@ -278,7 +282,7 @@ export const getAttendancePercentageByCourse = async (req: Request, res: Respons
     }
 
     // Calcular el porcentaje de asistencia
-    const result = await calculateAttendancePercentage(studentIdNum, courseIdNum);
+    const result = await calculateAttendancePercentageByCourse(studentIdNum, courseIdNum);
 
       res.status(200).json(result);
 
@@ -314,5 +318,77 @@ export const getStudentWithUser = async (student_id: string) => {
   } catch (error) {
     console.error(error);
     throw new Error('Error al obtener los datos del estudiante');
+  }
+};
+
+
+
+
+
+
+///CALCULAR ASISTENCIA GENERAL
+/**
+ * Calcular el porcentaje de asistencias de un estudiante
+ */
+export const calculateAttendancePercentageGeneral = async (studentId: number) => {
+  // Verifico si el estudiante existe
+  const student = await findStudentById(studentId.toString());
+  if (!student) {
+    throw new Error("Estudiante no encontrado");
+  }
+
+  // Contar el total de clases registradas
+  const totalClases = await Assist.count({
+    where: { student_id: studentId },
+  });
+
+  if (totalClases === 0) {
+    return {
+      id: studentId,
+      percentage: "0%",
+      message: "El estudiante no tiene asistencia registrada",
+      attended: 0,
+      total: totalClases,
+    };
+  }
+
+  // Contar las clases asistidas
+  const attendedClases = await Assist.count({
+    where: { student_id: studentId, attendance: 1 },
+  });
+
+  // Calcular el porcentaje
+  const attendancePercentage = (attendedClases / totalClases) * 100;
+
+  return {
+    id: studentId,
+    percentage: attendancePercentage.toFixed(2) + "%",
+    attended: attendedClases,
+    total: totalClases,
+  };
+};
+
+
+/**
+ * Endpoint para obtener el porcentaje de asistencia del estudiante
+ */
+export const getAttendancePercentageGeneral = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const studentId = parseInt(id, 10);
+
+    if (isNaN(studentId)) {
+      return res.status(400).json({ message: "ID de estudiante inválido" });
+    }
+
+    // Calcular el porcentaje de asistencia
+    const result = await calculateAttendancePercentageGeneral(studentId);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error al calcular el porcentaje de asistencia:", error);
+    res.status(500).json({
+      error: "Error interno al procesar la solicitud",
+    });
   }
 };
