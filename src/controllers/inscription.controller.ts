@@ -78,7 +78,7 @@ export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response
                 {
                     model:Courses,
                     as:"course",
-                    attributes:['title', 'image_url', 'startDate', 'price', 'endDate', 'modalidad']
+                    attributes:['id', 'title', 'image_url', 'startDate', 'price', 'endDate', 'modalidad']
                 },
                 {
                     model: Student, 

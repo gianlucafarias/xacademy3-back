@@ -7,7 +7,7 @@ import Student from "../models/Student";
 import Courses from "../models/Courses";
 import User from "../models/User";
 import { findCourseById } from "./course.controller";
-import { calculateAttendancePercentage, findConditionByStudentId, findStudentById, getStudentWithUser } from "./student.controller";
+import { calculateAttendancePercentageByCourse, findConditionByStudentId, findStudentById, getStudentWithUser } from "./student.controller";
 import { isStudentAlreadyEnrolled } from "./inscription.controller";
 
 
@@ -30,7 +30,7 @@ const isStudentApproved = async (student_id: number) => {
 
 // Función para verificar la asistencia
 const isAttendanceSufficient = async (student_id: number, course_id: number) => {
-    const correctAssistance = await calculateAttendancePercentage(student_id, course_id);
+    const correctAssistance = await calculateAttendancePercentageByCourse(student_id, course_id);
     const attendancePercentage = parseFloat(correctAssistance.percentage.toString());
     return attendancePercentage >= 80;
 };
