@@ -78,7 +78,7 @@ export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response
                 {
                     model:Courses,
                     as:"course",
-                    attributes:['title', 'image_url', 'startDate', 'price', 'endDate', 'modalidad']
+                    attributes:['id', 'title', 'image_url', 'startDate', 'price', 'endDate', 'modalidad']
                 },
                 {
                     model: Student, 
@@ -289,14 +289,9 @@ export const getStudentByUserId = async (req: Request, res: Response) => {
     const userId = req.params.user_id;  
   
     try {
-      console.log('Buscando estudiante con user_id:', userId);  
-  
       const student = await Student.findOne({
-        where: { user_id: userId },  
-        include: [
-          { model: User, as: 'user' },  
-          { model: Courses, as: 'courses' } 
-        ]
+        where: { user_id: userId }, 
+        attributes: ['id', 'user_id', 'course_id', 'qualification', 'studentCondition']
       });
       
       if (student) {
@@ -312,5 +307,33 @@ export const getStudentByUserId = async (req: Request, res: Response) => {
     }
   };
   
+  /**
+ * Obtener el total de cursos inscritos por student_id
+ * @Request student_id (desde el usuario autenticado)
+ * @Response total de inscripciones
+ */
+
+export const getCountInscriptions = async (req: AuthRequest, res: Response) => {
+    const user = req.user;
+    try {
+        const totalInscriptions = await Inscription.count({
+            include: [
+                {
+                    model: Student,
+                    as: "student",
+                    where: {
+                        user_id: user.id
+                    }
+                }
+            ]
+        });
+
+        res.status(200).json({ total: totalInscriptions });
+    } catch (error) {
+        console.error('Error al obtener el total de inscripciones:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
     
 
