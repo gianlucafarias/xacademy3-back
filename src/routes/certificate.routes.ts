@@ -6,4 +6,5 @@ const router = Router();
 router.post("/generar-certificado", generateCertificate as RequestHandler);
 router.get('/view/:student_id', getCerticateById as RequestHandler );
 
+
 export default router;
