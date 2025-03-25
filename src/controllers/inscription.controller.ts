@@ -6,6 +6,7 @@ import User from "../models/User";
 import Payment from "../models/Payment";
 import { AuthRequest } from "../middleware/authMiddleware";
 import { Model, Op } from "sequelize";
+import { getStudentById } from "./student.controller";
 
 
 /**
@@ -73,6 +74,15 @@ export const getInscriptionsByCourseId = async (req: Request, res: Response) => 
 export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response) => {
     const user = req.user;
     try {
+        const student = await Student.findOne({
+            where: { user_id: user.id },
+            attributes: ['id']
+        });
+        
+        if (!student) {
+            return res.status(200).json([]);
+        }
+
         const inscriptions =await Inscription.findAll({
             include:[
                 {
@@ -90,7 +100,7 @@ export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response
                 }
             ]
         });
-        if(!inscriptions){
+        if(inscriptions.length === 0){
             return res.status(404).json({
                 error:'No se encontraron inscripciones para el estudiante'
             })
@@ -295,12 +305,10 @@ export const getStudentByUserId = async (req: Request, res: Response) => {
       });
       
       if (student) {
-        console.log('Estudiante encontrado:', student);
         res.json({ student });  
       } else {
-        console.warn('Estudiante no encontrado para el user_id:', userId);
-        res.status(404).json({ error: 'Estudiante no encontrado' });
-      }
+            res.status(200).json({ student: null });
+        }
     } catch (err) {
       console.error('Error al obtener estudiante:', err);  
       res.status(500).json({ error: 'Error al obtener estudiante' });
