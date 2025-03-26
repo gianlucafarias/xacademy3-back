@@ -272,3 +272,72 @@ export const getTeacherByUserId = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al obtener el profesor' });
     }
 }
+
+
+/**
+ * Obtener profesores ordenados por columna
+ * @param req 
+ * @param res
+ */
+export const getOrderedTeachers = async (req: Request, res: Response) => {
+    try {
+        const { column, direction, page = 1, limit = 10 } = req.query;
+
+        let orderClause: any = [['id', 'ASC']]; // Orden predeterminado
+        const offset = (Number(page) - 1) * Number(limit);
+
+        if (column && typeof column === 'string') {
+            const dir = direction && (direction as string).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+            if (column === 'user') {
+                orderClause = [[
+                    { model: User, as: 'user' }, 
+                    'name', 
+                    dir
+                ]];
+            }
+            else if (column === 'name' || column === 'email') {
+                // Si intentan ordenar por nombre o email, estos pertenecen al modelo User
+                orderClause = [[
+                    { model: User, as: 'user' }, 
+                    column, 
+                    dir
+                ]];
+            }
+            else if (isValidColumn(column)) {
+                // Solo para columnas que existen en la tabla Teacher
+                orderClause = [[column, dir]];
+            }
+        }
+
+        const { count, rows } = await Teacher.findAndCountAll({
+            order: orderClause,
+            limit: Number(limit),
+            offset: offset,
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: { exclude: ['password'] }
+            }]
+        });
+
+        const teachers = rows.map(teacher => teacher.dataValues);
+
+        res.status(200).json({
+            teachers,
+            total: count,
+            page: Number(page),
+            limit: Number(limit)
+        });
+
+    } catch (error) {
+        console.error('Error al obtener profesores ordenados:', error);
+        res.status(500).json({ error: 'Error al obtener los profesores ordenados' });
+    }
+}
+
+function isValidColumn(column: string): boolean {
+    // Solo incluir columnas que existen en la tabla Teacher
+    const allowedColumns = ['id', 'specialty', 'user_id'];
+    return allowedColumns.includes(column);
+}

@@ -3,6 +3,9 @@ import  Courses  from '../models/Courses';
 import CoursesCategory from '../models/CoursesCategory';
 import { Op} from 'sequelize';
 import { AuthRequest } from "../middleware/authMiddleware";
+import Teacher from '../models/Teacher';
+import User from '../models/User';
+
 
 export const createCourse = async (req: Request, res: Response) => {
   const { 
@@ -39,7 +42,6 @@ export const createCourse = async (req: Request, res: Response) => {
     }else if(new Date(endDate) < today){
       status = 'FINALIZADO';
     }
-    console.log(status);
 
     // Crear el curso
     const course = await Courses.create({ 
@@ -60,7 +62,6 @@ export const createCourse = async (req: Request, res: Response) => {
   );
 
     res.status(201).json({ message: 'Curso creado con éxito', course });
-    console.log(course);
   } catch (error) {
     console.error('Error al crear el curso:', error);
     res.status(500).json({ error: 'Error al crear el curso' });
@@ -97,23 +98,6 @@ export const updateCourseStatus = async () => {
       }
     );
 
-    // Actualizar cursos que deben estar "PENDIENTE"
-    const updatedToPending = await Courses.update(
-      { status: "PENDIENTE", isActive: true }, // Activar curso como pendiente
-      {
-        where: {
-          startDate: { [Op.gt]: today },  // Fecha de inicio mayor a hoy
-          status: { [Op.ne]: "PENDIENTE" }, // Solo actualiza si no están ya "PENDIENTE"
-        },
-      }
-    );
-
-    console.log(
-      `Estados de cursos actualizados: 
-      Activo: ${updatedToActive[0]} | 
-      Finalizado: ${updatedToFinalized[0]} | 
-      Pendiente: ${updatedToPending[0]}`
-    );
   } catch (error) {
     console.error("Error al actualizar el estado de los cursos:", error);
   }
@@ -126,7 +110,6 @@ export const getAllCourses = async (req: Request, res: Response) => {
     const courses = await Courses.findAll();
     res.status(200).json(courses);
   } catch (error) { 
-    console.log(error)
     res.status(500).json({ error: 'Error al obtener los cursos' });
   }
 }
@@ -182,7 +165,6 @@ export const updateCourse = async (req: AuthRequest, res: Response) => {
     teacher_id,
     category_id
   } = req.body;
-  console.log('Recibiendo image_url:', image_url);
 
   try {
     // Verificar si el usuario está autenticado
@@ -438,6 +420,104 @@ export const lastestCourses = async (req: Request, res: Response)=>{
   }
 }
 
+
+/**
+ * Ordenar cursos por columna
+ * @param req 
+ * @param res
+ */
+export const getOrderedCourses = async (req: Request, res: Response) => {
+  try {
+    const { column, direction, page = 1, limit = 10 } = req.query;
+
+    let orderClause: any = [['id', 'ASC']]; // Orden predeterminado
+    const offset = (Number(page) - 1) * Number(limit);
+
+    if (column && typeof column === 'string') {
+      const dir = direction && (direction as string).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+      
+      if (column === 'teacher') {
+        orderClause = [[
+          { model: Teacher, as: 'teacher' }, 
+          { model: User, as: 'user' }, 
+          'name', 
+          dir
+        ]];
+      } 
+      else if (column === 'category') {
+        orderClause = [[
+          { model: CoursesCategory, as: 'courses_category' }, 
+          'title', 
+          dir
+        ]];
+      }
+      else if (isValidColumn(column)) {
+        orderClause = [[column, dir]];
+      }
+    }
+
+    const { count, rows } = await Courses.findAndCountAll({
+      order: orderClause,
+      limit: Number(limit),
+      offset: offset,
+      include: [
+        {
+          model: Teacher,
+          as: 'teacher',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['name', 'lastname', 'email']
+            }
+          ]
+        },
+        {
+          model: CoursesCategory,
+          as: 'courses_category',
+          attributes: ['id', 'title']
+        }
+      ]
+    });
+
+    res.status(200).json({
+      courses: rows,
+      totalItems: count,
+      currentPage: Number(page),
+      totalPages: Math.ceil(count / Number(limit)),
+      hasNextPage: Number(page) < Math.ceil(count / Number(limit)),
+      hasPreviousPage: Number(page) > 1
+    });
+
+  } catch (error) {
+    console.error('Error al obtener cursos ordenados:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    res.status(500).json({ 
+      error: 'Error al obtener los cursos ordenados',
+      details: errorMessage
+    });
+  }
+};
+
+// Función auxiliar para validar columnas permitidas
+function isValidColumn(column: string): boolean {
+  const allowedColumns = [
+    'id', 
+    'title', 
+    'description', 
+    'price', 
+    'quota', 
+    'category_id', 
+    'teacher_id', 
+    'hours',
+    'startDate',
+    'endDate',
+    'createdAt',
+    'updatedAt',
+    'isActive'
+  ];
+  return allowedColumns.includes(column);
+}
 
 
 

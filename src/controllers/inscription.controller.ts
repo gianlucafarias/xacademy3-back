@@ -5,7 +5,7 @@ import Courses from "../models/Courses";
 import User from "../models/User";
 import Payment from "../models/Payment";
 import { AuthRequest } from "../middleware/authMiddleware";
-import { Model, Op } from "sequelize";
+import { Model, Op, Sequelize } from "sequelize";
 import { getStudentById } from "./student.controller";
 
 
@@ -18,7 +18,6 @@ export const getAllInscriptions = async (req: Request, res: Response) => {
       const inscriptions = await Inscription.findAll();
       res.status(200).json(inscriptions);
     } catch (error) { 
-      console.log(error)
       res.status(500).json({ error: 'Error las incripciones' });
     }
   }
@@ -343,5 +342,56 @@ export const getCountInscriptions = async (req: AuthRequest, res: Response) => {
     }
 };
 
-    
+/**
+ * Obtengo las estadisticas mensuales
+ * @Request year
+ * @Response monthly stats
+ */
+export const getMonthlyStats = async (req: Request, res: Response) => {
+    try {
+        const { year } = req.query;
+        let whereClause = {};
+        
+        // si se proporciona un año, filtrar por ese año
+        if (year) {
+            whereClause = {
+                regirationDate: {
+                    [Op.between]: [
+                        new Date(`${year}-01-01`),
+                        new Date(`${year}-12-31`)
+                    ]
+                }
+            };
+        }
+
+        const monthlyStats = await Inscription.findAll({
+            attributes: [
+                [Sequelize.fn('MONTH', Sequelize.col('regirationDate')), 'month'],
+                [Sequelize.fn('YEAR', Sequelize.col('regirationDate')), 'year'],
+                [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+            ],
+            where: whereClause,
+            group: [
+                Sequelize.fn('YEAR', Sequelize.col('regirationDate')),
+                Sequelize.fn('MONTH', Sequelize.col('regirationDate'))
+            ],
+            order: [
+                [Sequelize.fn('YEAR', Sequelize.col('regirationDate')), 'ASC'],
+                [Sequelize.fn('MONTH', Sequelize.col('regirationDate')), 'ASC']
+            ],
+            raw: true
+        });
+
+        const formattedStats = monthlyStats.map((stat: any) => ({
+            month: parseInt(stat.month as string, 10),
+            year: parseInt(stat.year as string, 10),
+            count: parseInt(stat.count as string, 10)
+        }));
+
+        res.status(200).json(formattedStats);
+    } catch (error) {
+        console.error('Error al obtener las estadísticas mensuales:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
 

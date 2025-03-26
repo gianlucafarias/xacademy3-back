@@ -9,14 +9,10 @@ import { AuthRequest } from "../middleware/authMiddleware";
 //Mostrar todos los estudiantes
 export const getAllStudents = async (req: AuthRequest, res: Response) => {
   try {
-    const students = await Student.findAll({
-      attributes: { exclude: ['id', 'user_id'] },
-    });
-    console.log(students);
+    const students = await Student.findAll();
     res.status(200).json(students);
   } catch (error) {
     console.error(error);
-    console.log('Error al obtener los estudiantes', error);
     res.status(500).json({ message: 'Error al obtener los estudiantes' });
   }
 }
@@ -208,7 +204,6 @@ export const calculateAttendancePercentageByCourse = async (studentId: number,  
     attributes: ["id"],
   });
 
-  console.log("Clases en el curso:", classesInCourse);
 
   if (!classesInCourse.length) {
     return { 
@@ -227,7 +222,6 @@ export const calculateAttendancePercentageByCourse = async (studentId: number,  
     where: { student_id: studentId, class_id: classIds },
   });
 
-  console.log("Total de clases registradas:", totalClasesInCourse);
 
   if (totalClasesInCourse === 0) {
     return {
@@ -245,8 +239,6 @@ export const calculateAttendancePercentageByCourse = async (studentId: number,  
     where: { student_id: studentId, class_id: classIds, attendance: 1 },
   });
 
-  console.log("Clases asistidas (attendance = 1)::", attendedClasesInCourse);
-
   // Calcular el porcentaje
   const attendancePercentage = (attendedClasesInCourse / totalClasesInCourse) * 100;
 
@@ -256,7 +248,6 @@ export const calculateAttendancePercentageByCourse = async (studentId: number,  
       where: { student_id: studentId, class_id: classIds },
       attributes: ["class_id", "attendance"], // Ver los registros de asistencia y los class_id
     });
-    console.log("Registros de asistencia del estudiante:", assistRecords);
 
   return {
     id: studentId,

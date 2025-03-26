@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Payment from "../models/Payment";
 import Student from "../models/Student";
 import Courses from "../models/Courses";
+import User from "../models/User";
 
 /**
  * Muestro todos los pagos
@@ -11,7 +12,6 @@ export const getAllPayments = async (req: Request, res: Response) => {
       const payments = await Payment.findAll();
       res.status(200).json(payments);
     } catch (error) { 
-      console.log(error)
       res.status(500).json({ error: 'Error al obtener todos los pagos' });
     }
   }
@@ -241,3 +241,95 @@ export const getCountPendingPayments = async (req: Request, res: Response) => {
   }
 };
 
+export const getOrderedPayments = async (req: Request, res: Response) => {
+  try {
+    const { orderBy, direction, student_id, status, page = 1, limit = 10 } = req.query;
+
+    let orderClause: any = [['id', 'ASC']];
+    const offset = (Number(page) - 1) * Number(limit);
+
+    // Construir el where con student_id y status
+    const where: any = {};
+    if (student_id) where.student_id = student_id;
+    if (status) where.status = status;
+
+    if (orderBy && typeof orderBy === 'string') {
+      const dir = direction && (direction as string).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+      if (orderBy === 'courses') {
+        orderClause = [[
+          { model: Courses, as: 'courses' },
+          'title',
+          dir
+        ]];
+      }
+      else if (orderBy === 'student') {
+        orderClause = [[
+          { model: Student, as: 'student' },
+          { model: User, as: 'user' },
+          'name',
+          dir
+        ]];
+      }
+      else if (isValidColumn(orderBy)) {
+        orderClause = [[orderBy, dir]];
+      }
+    }
+
+    const { count, rows } = await Payment.findAndCountAll({
+      where: where, // Usar el where construido con ambos filtros
+      order: orderClause,
+      limit: Number(limit),
+      offset: offset,
+      include: [
+        {
+          model: Courses,
+          as: 'courses',
+          attributes: ['id', 'title', 'price']
+        },
+        {
+          model: Student,
+          as: 'student',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'name', 'lastname', 'email']
+            }
+          ]
+        }
+      ]
+    });
+
+    res.status(200).json({
+      payments: rows,
+      totalItems: count,
+      currentPage: Number(page),
+      totalPages: Math.ceil(count / Number(limit)),
+      hasNextPage: Number(page) < Math.ceil(count / Number(limit)),
+      hasPreviousPage: Number(page) > 1
+    });
+
+  } catch (error) {
+    console.error('Error al obtener los pagos ordenados:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    res.status(500).json({ 
+      error: 'Error al obtener los pagos ordenados',
+      details: errorMessage
+    });
+  }
+};
+
+function isValidColumn(column: string): boolean {
+  const allowedColumns = [
+    'id', 
+    'student_id', 
+    'course_id', 
+    'price', 
+    'status',
+    'payment_method',
+    'createdAt',
+    'updatedAt'
+  ];
+  return allowedColumns.includes(column);
+}

@@ -207,12 +207,9 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 export const registerWithFirebase = async (req: Request, res: Response) => {
-    console.log('Recibida petición de registro social:', req.body);
-    
     const { uuid, email, name } = req.body;
 
     if (!uuid || !email) {
-        console.log('Faltan campos requeridos:', { uuid, email, name });
         return res.status(400).json({ 
             message: 'UUID y email son requeridos',
             received: { uuid, email, name }
@@ -325,7 +322,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         }
 
         const me = await User.findOne({
-            attributes: ['id', 'birthday', 'address', 'dni', 'phone'], 
+            attributes: ['id', 'name', 'lastname', 'birthday', 'address', 'dni', 'phone'], 
             where: { id: user.id }
         });
 
