@@ -6,6 +6,7 @@ import User from "../models/User";
 import Payment from "../models/Payment";
 import { AuthRequest } from "../middleware/authMiddleware";
 import { Model, Op } from "sequelize";
+import { getStudentById } from "./student.controller";
 
 
 /**
@@ -73,12 +74,21 @@ export const getInscriptionsByCourseId = async (req: Request, res: Response) => 
 export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response) => {
     const user = req.user;
     try {
+        const student = await Student.findOne({
+            where: { user_id: user.id },
+            attributes: ['id']
+        });
+        
+        if (!student) {
+            return res.status(200).json([]);
+        }
+
         const inscriptions =await Inscription.findAll({
             include:[
                 {
                     model:Courses,
                     as:"course",
-                    attributes:['title', 'image_url', 'startDate', 'price', 'endDate', 'modalidad']
+                    attributes:['id', 'title', 'image_url', 'startDate', 'price', 'endDate', 'modalidad']
                 },
                 {
                     model: Student, 
@@ -90,7 +100,7 @@ export const getInscriptionsByStudentId = async (req: AuthRequest, res: Response
                 }
             ]
         });
-        if(!inscriptions){
+        if(inscriptions.length === 0){
             return res.status(404).json({
                 error:'No se encontraron inscripciones para el estudiante'
             })
@@ -289,28 +299,49 @@ export const getStudentByUserId = async (req: Request, res: Response) => {
     const userId = req.params.user_id;  
   
     try {
-      console.log('Buscando estudiante con user_id:', userId);  
-  
       const student = await Student.findOne({
-        where: { user_id: userId },  
-        include: [
-          { model: User, as: 'user' },  
-          { model: Courses, as: 'courses' } 
-        ]
+        where: { user_id: userId }, 
+        attributes: ['id', 'user_id', 'course_id', 'qualification', 'studentCondition']
       });
       
       if (student) {
-        console.log('Estudiante encontrado:', student);
         res.json({ student });  
       } else {
-        console.warn('Estudiante no encontrado para el user_id:', userId);
-        res.status(404).json({ error: 'Estudiante no encontrado' });
-      }
+            res.status(200).json({ student: null });
+        }
     } catch (err) {
       console.error('Error al obtener estudiante:', err);  
       res.status(500).json({ error: 'Error al obtener estudiante' });
     }
   };
   
+  /**
+ * Obtener el total de cursos inscritos por student_id
+ * @Request student_id (desde el usuario autenticado)
+ * @Response total de inscripciones
+ */
+
+export const getCountInscriptions = async (req: AuthRequest, res: Response) => {
+    const user = req.user;
+    try {
+        const totalInscriptions = await Inscription.count({
+            include: [
+                {
+                    model: Student,
+                    as: "student",
+                    where: {
+                        user_id: user.id
+                    }
+                }
+            ]
+        });
+
+        res.status(200).json({ total: totalInscriptions });
+    } catch (error) {
+        console.error('Error al obtener el total de inscripciones:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
     
 

@@ -196,7 +196,155 @@ export const getConditionByStudentId = async (req: Request, res: Response) => {
 /**
  * Calcular el porcentaje de asistencias de un estudiante
  */
-export const calculateAttendancePercentage = async (studentId: number) => {
+export const calculateAttendancePercentageByCourse = async (studentId: number,  courseId: number) => {
+  // Verifico si el estudiante existe
+  const student = await findStudentById(studentId.toString());
+  if (!student) {
+    throw new Error("Estudiante no encontrado");
+  }
+
+  const classesInCourse = await Class.findAll({
+    where: { course_id: courseId },
+    attributes: ["id"],
+  });
+
+  console.log("Clases en el curso:", classesInCourse);
+
+  if (!classesInCourse.length) {
+    return { 
+      id: studentId, 
+      courseId, 
+      percentage: "0%", 
+      attended: 0, 
+      total: 0 
+    };  
+  }
+
+  const classIds = classesInCourse.map(c => c.get("id"));
+
+  // Contar el total de clases registradas
+  const totalClasesInCourse= await Assist.count({
+    where: { student_id: studentId, class_id: classIds },
+  });
+
+  console.log("Total de clases registradas:", totalClasesInCourse);
+
+  if (totalClasesInCourse === 0) {
+    return {
+      id: studentId,
+      courseId,
+      percentage: "0%",
+      message: "El estudiante no tiene asistencia registrada",
+      attended: 0,
+      total: classIds.length,
+    };
+  }
+
+  // Contar las clases asistidas
+  const attendedClasesInCourse = await Assist.count({
+    where: { student_id: studentId, class_id: classIds, attendance: 1 },
+  });
+
+  console.log("Clases asistidas (attendance = 1)::", attendedClasesInCourse);
+
+  // Calcular el porcentaje
+  const attendancePercentage = (attendedClasesInCourse / totalClasesInCourse) * 100;
+
+
+    // Verificar qué valores hay en la tabla Assist para este estudiante
+    const assistRecords = await Assist.findAll({
+      where: { student_id: studentId, class_id: classIds },
+      attributes: ["class_id", "attendance"], // Ver los registros de asistencia y los class_id
+    });
+    console.log("Registros de asistencia del estudiante:", assistRecords);
+
+  return {
+    id: studentId,
+    courseId,
+    percentage: attendancePercentage.toFixed(2) + "%",
+    attended: attendedClasesInCourse,
+    total: totalClasesInCourse,
+  };
+};
+
+/**
+ * Verificar si la clase pertenece a un curso
+ */
+export const verifyClassBelongsToCourse = async (classId: number) => {
+  const classData = await Class.findOne({
+    where: { id: classId },
+    attributes: ["id", "course_id"], // Solo los campos necesarios
+  });
+
+  if (!classData) {
+    throw new Error("La clase no existe");
+  }
+
+  return classData.dataValues.course_id; // Retorna el curso al que pertenece la clase
+};
+
+/**
+ * Endpoint para obtener el porcentaje de asistencia del estudiante
+ */
+export const getAttendancePercentageByCourse = async (req: Request, res: Response) => {
+  try {
+    const { studentId, courseId } = req.params;
+    const studentIdNum = parseInt(studentId, 10);
+    const courseIdNum = parseInt(courseId, 10);
+
+    if (isNaN(studentIdNum)) {
+      return res.status(400).json({ message: "ID de estudiante inválido" });
+    }
+
+    // Calcular el porcentaje de asistencia
+    const result = await calculateAttendancePercentageByCourse(studentIdNum, courseIdNum);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error al calcular el porcentaje de asistencia:", error);
+    res.status(500).json({
+      error: "Error interno al procesar la solicitud",
+    });
+  }
+};
+
+/**
+ * Data del estudiante
+ */
+export const getStudentWithUser = async (student_id: string) => {
+  try {
+    const student = await Student.findOne({
+      where: { id: student_id },
+      include: [
+        {
+          model: User,
+          as: 'user', 
+          attributes: ['name', 'lastname', 'dni']
+        }
+      ]
+    });
+
+    if (!student) {
+      throw new Error('Estudiante no encontrado');
+    }
+
+    return student;
+  } catch (error) {
+    console.error(error);
+    throw new Error('Error al obtener los datos del estudiante');
+  }
+};
+
+
+
+
+
+
+///CALCULAR ASISTENCIA GENERAL
+/**
+ * Calcular el porcentaje de asistencias de un estudiante
+ */
+export const calculateAttendancePercentageGeneral = async (studentId: number) => {
   // Verifico si el estudiante existe
   const student = await findStudentById(studentId.toString());
   if (!student) {
@@ -234,26 +382,11 @@ export const calculateAttendancePercentage = async (studentId: number) => {
   };
 };
 
-/**
- * Verificar si la clase pertenece a un curso
- */
-export const verifyClassBelongsToCourse = async (classId: number) => {
-  const classData = await Class.findOne({
-    where: { id: classId },
-    attributes: ["id", "course_id"], // Solo los campos necesarios
-  });
-
-  if (!classData) {
-    throw new Error("La clase no existe");
-  }
-
-  return classData.dataValues.course_id; // Retorna el curso al que pertenece la clase
-};
 
 /**
  * Endpoint para obtener el porcentaje de asistencia del estudiante
  */
-export const getAttendancePercentage = async (req: Request, res: Response) => {
+export const getAttendancePercentageGeneral = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const studentId = parseInt(id, 10);
@@ -263,7 +396,7 @@ export const getAttendancePercentage = async (req: Request, res: Response) => {
     }
 
     // Calcular el porcentaje de asistencia
-    const result = await calculateAttendancePercentage(studentId);
+    const result = await calculateAttendancePercentageGeneral(studentId);
 
     res.status(200).json(result);
   } catch (error) {
@@ -271,32 +404,5 @@ export const getAttendancePercentage = async (req: Request, res: Response) => {
     res.status(500).json({
       error: "Error interno al procesar la solicitud",
     });
-  }
-};
-
-/**
- * Data del estudiante
- */
-export const getStudentWithUser = async (student_id: string) => {
-  try {
-    const student = await Student.findOne({
-      where: { id: student_id },
-      include: [
-        {
-          model: User,
-          as: 'user', 
-          attributes: ['name', 'lastname', 'dni']
-        }
-      ]
-    });
-
-    if (!student) {
-      throw new Error('Estudiante no encontrado');
-    }
-
-    return student;
-  } catch (error) {
-    console.error(error);
-    throw new Error('Error al obtener los datos del estudiante');
   }
 };

@@ -222,3 +222,22 @@ export const getCoursePaymentStatus = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
+export const getCountPendingPayments = async (req: Request, res: Response) => {
+  const { student_id } = req.params;
+
+  try {
+    const totalPendingPayments = await Payment.count({
+      where: {
+        student_id,
+        status: 'PENDIENTE',
+      },
+    });
+
+    res.status(200).json({ total: totalPendingPayments });
+  } catch (error) {
+    console.error('Error al obtener el total de pagos pendientes:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+

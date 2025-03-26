@@ -8,7 +8,7 @@ import Student from "../models/Student";
 import Courses from "../models/Courses";
 import User from "../models/User";
 import { findCourseById } from "./course.controller";
-import { calculateAttendancePercentage, findConditionByStudentId, findStudentById, getStudentWithUser } from "./student.controller";
+import { calculateAttendancePercentageByCourse, findConditionByStudentId, findStudentById, getStudentWithUser } from "./student.controller";
 import { isStudentAlreadyEnrolled } from "./inscription.controller";
 
 const CERTIFICATES_DIR = path.join(__dirname, '../../certificates');
@@ -31,9 +31,25 @@ const isStudentApproved = async (student_id: number) => {
 };
 
 // Función para verificar la asistencia(minimo 80%)
-const isAttendanceSufficient = async (student_id: number) => {
-    const attendance = await calculateAttendancePercentage(student_id);
-    return parseFloat(attendance.percentage.toString()) >= 80;
+// Función para verificar la asistencia (mínimo 80%) por curso
+const isAttendanceSufficient = async (student_id: number, course_id: number): Promise<boolean> => {
+    try {
+        const attendance = await calculateAttendancePercentageByCourse(student_id, course_id);
+
+        // Extraer el valor numérico del porcentaje (eliminando el símbolo %)
+        const percentageValue = parseFloat(attendance.percentage.replace('%', ''));
+
+        return percentageValue >= 80;
+    } catch (error) {
+        console.error('Error al calcular asistencia:', error);
+
+        // Puedes manejar el error de diferentes formas:
+        // 1. Lanzar el error para que lo maneje el llamador
+        throw error;
+
+        // O 2. Retornar false y registrar el error
+        // return false;
+    }
 };
 
 // Crear directorio si no existe
@@ -147,7 +163,7 @@ export const generateCertificate = async (req: Request, res: Response) => {
 
         // Validación básica reutilizando tus funciones
         if (!student_id || !course_id) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: "Se requieren student_id y course_id",
                 code: "MISSING_REQUIRED_FIELDS"
             });
@@ -170,7 +186,7 @@ export const generateCertificate = async (req: Request, res: Response) => {
             findCourseById(course_id),
             isStudentAlreadyEnrolled(student_id, course_id),
             isStudentApproved(student_id),
-            isAttendanceSufficient(student_id)
+            isAttendanceSufficient(student_id, course_id)
         ]);
 
         if (!student) return res.status(404).json({ error: 'Estudiante no encontrado' });
@@ -204,14 +220,14 @@ export const generateCertificate = async (req: Request, res: Response) => {
         // Stream el archivo al cliente (usando tu misma lógica)
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-        
+
         const fileStream = fs.createReadStream(filePath);
         fileStream.pipe(res);
-        
+
         fileStream.on('error', (err) => {
             console.error('Stream error:', err);
             if (!res.headersSent) {
-                res.status(500).json({ 
+                res.status(500).json({
                     error: "Error al enviar el archivo",
                     code: "STREAM_ERROR"
                 });
@@ -220,7 +236,7 @@ export const generateCertificate = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error('[Certificate Error]', error);
-        
+
         if (!res.headersSent) {
             const statusCode = error instanceof Error && error.name === 'ValidationError' ? 400 : 500;
             res.status(statusCode).json({
@@ -238,7 +254,7 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         const certificado = await Certificate.findByPk(id);
 
         if (!certificado) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'Certificado no encontrado',
                 code: "CERTIFICATE_NOT_FOUND"
             });
@@ -246,7 +262,7 @@ export const downloadCertificate = async (req: Request, res: Response) => {
 
         const filePath = certificado.dataValues.file_path;
         if (!filePath || !(await fileExists(filePath))) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'Archivo de certificado no disponible',
                 code: "FILE_NOT_AVAILABLE"
             });
@@ -264,46 +280,86 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         });
     }
 };
-    
-    export const getCerticateById = async (req: Request, res: Response) => {
-        try {
-            const student_id = req.params.student_id;
-            
-            if (!student_id || isNaN(Number(student_id))) {
-                return res.status(400).json({ error: 'ID de estudiante inválido' });
-            }
-    
-            const certificados = await Certificate.findAll({
-                where: { student_id },
-                include: [{
-                    model: Courses,
-                    as: 'course',
-                    attributes: ['title', 'id'],
-                }],
-                order: [['issue_date', 'DESC']]
-            });
-    
-            if (!certificados.length) {
-                return res.status(404).json({ error: 'No se encontraron certificados' });
-            }
-    
-            res.json(certificados.map(c => ({
-                id: c.dataValues.id,
-                course: c.dataValues.course.title,
-                issue_date: c.dataValues.issue_date,
-                status: c.dataValues.status,
-                download_url: `/api/certificates/download/${c.dataValues.id}`
-            })));
-    
-        } catch (error) {
-            console.error('Error en getCerticateById:', error);
-            res.status(500).json({ 
-                error: 'Error al obtener certificados',
-                details: error instanceof Error ? error.message : String(error)
+
+export const getCerticateById = async (req: Request, res: Response) => {
+    try {
+        const student_id = req.params.student_id;
+
+        if (!student_id || isNaN(Number(student_id))) {
+            return res.status(400).json({ error: 'ID de estudiante inválido' });
+        }
+
+        const certificados = await Certificate.findAll({
+            where: { student_id },
+            include: [{
+                model: Courses,
+                as: 'course',
+                attributes: ['title', 'id'],
+            }],
+            order: [['issue_date', 'DESC']]
+        });
+
+        if (!certificados.length) {
+            return res.status(404).json({ error: 'No se encontraron certificados' });
+        }
+
+        res.json(certificados.map(c => ({
+            id: c.dataValues.id,
+            course: c.dataValues.course.title,
+            issue_date: c.dataValues.issue_date,
+            status: c.dataValues.status,
+            download_url: `/api/certificates/download/${c.dataValues.id}`
+        })));
+
+    } catch (error) {
+        console.error('Error en getCerticateById:', error);
+        res.status(500).json({
+            error: 'Error al obtener certificados',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+export const checkAndGenerateCertificates = async (req: Request, res: Response) => {
+
+    try {
+        const { student_id, course_id } = req.params;
+
+        if (!student_id || !course_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Se requieren 'student_id' y 'course_id'."
             });
         }
-    };
-    function accessAsync(path: path.PlatformPath) {
-        throw new Error("Function not implemented.");
+
+        // Lógica del controlador (ejemplo)
+        const filePath = path.join(CERTIFICATES_DIR, `Certificado_${student_id}_${course_id}_${Date.now()}.pdf`);
+        const certificate = await generatePDF(student_id, course_id, filePath);
+
+
+        if (!filePath) {
+            return res.status(404).json({
+                success: false,
+                message: 'Certificado no encontrado.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            certificate,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: 'Ocurrió un error en el servidor.',
+        });
     }
+};
+
+
+
+function accessAsync(path: path.PlatformPath) {
+    throw new Error("Function not implemented.");
+}
 
