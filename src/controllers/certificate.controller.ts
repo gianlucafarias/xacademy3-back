@@ -184,7 +184,7 @@ export const generateCertificate = async (req: Request, res: Response) => {
         const [student, course, enrolled, approved, attendanceOk] = await Promise.all([
             getStudentWithUser(student_id),
             findCourseById(course_id),
-            isStudentAlreadyEnrolled(student_id, course_id),
+            isStudentAlreadyEnrolled(Number(student_id), Number(course_id)),
             isStudentApproved(student_id),
             isAttendanceSufficient(student_id, course_id)
         ]);
@@ -319,47 +319,121 @@ export const getCerticateById = async (req: Request, res: Response) => {
         });
     }
 };
-
 export const checkAndGenerateCertificates = async (req: Request, res: Response) => {
-
     try {
-        const { student_id, course_id } = req.params;
-
+        const student_id = req.params.student_id;
+        const course_id = req.params.course_id;
+        
+        console.log('student', student_id, 'course',course_id);
+        // Validación básica
         if (!student_id || !course_id) {
-            return res.status(400).json({
-                success: false,
-                message: "Se requieren 'student_id' y 'course_id'."
+            return res.status(400).json({ 
+                error: "Se requieren student_id y course_id",
+                code: "MISSING_REQUIRED_FIELDS"
             });
         }
 
-        // Lógica del controlador (ejemplo)
-        const filePath = path.join(CERTIFICATES_DIR, `Certificado_${student_id}_${course_id}_${Date.now()}.pdf`);
-        const certificate = await generatePDF(student_id, course_id, filePath);
+        // 1. Verificar si ya existe el certificado
+        const existingCert = await isCertificateAlreadyIssued(Number(student_id), Number(course_id));
 
-
-        if (!filePath) {
-            return res.status(404).json({
-                success: false,
-                message: 'Certificado no encontrado.'
+        // Si existe y tiene archivo 
+        if (existingCert?.dataValues?.file_path && await fileExists(existingCert.dataValues.file_path)) {
+            return res.json({
+                success: true,
+                message: "Certificado ya existe",
+                action: "download",
+                file_path: existingCert.dataValues.file_path,
+                download_url: `/api/certificates/download/${existingCert.dataValues.id}`,
+                certificate: {
+                    id: existingCert.dataValues.id,
+                    issue_date: existingCert.dataValues.issue_date,
+                    status: existingCert.dataValues.status
+                }
             });
         }
 
-        res.status(200).json({
+        // 2. Verificar requisitos del estudiante 
+        const [student, course, enrolled, approved, attendance] = await Promise.all([
+            getStudentWithUser(student_id),
+            findCourseById(course_id),
+            isStudentAlreadyEnrolled(Number(student_id), Number(course_id)),
+            isStudentApproved(Number(student_id)),
+            calculateAttendancePercentageByCourse(Number(student_id), Number(course_id))
+        ]);
+
+        // Validaciones 
+        if (!student) {
+            return res.status(404).json({ 
+                error: 'Estudiante no encontrado',
+                code: "STUDENT_NOT_FOUND" 
+            });
+        }
+
+        if (!course) {
+            return res.status(404).json({ 
+                error: 'Curso no encontrado',
+                code: "COURSE_NOT_FOUND" 
+            });
+        }
+
+        if (!enrolled) {
+            return res.status(400).json({ 
+                error: 'Estudiante no inscrito en este curso',
+                code: "NOT_ENROLLED" 
+            });
+        }
+
+        if (!approved) {
+            return res.status(400).json({ 
+                error: 'Estudiante no aprobado',
+                code: "NOT_APPROVED" 
+            });
+        }
+
+        // Reutilizando tu lógica de isAttendanceSufficient
+        const percentage = parseFloat(attendance.percentage.replace('%', ''));
+        if (percentage < 80) {
+            return res.status(400).json({ 
+                error: `Asistencia insuficiente (${attendance.percentage})`,
+                code: "INSUFFICIENT_ATTENDANCE",
+                details: attendance
+            });
+        }
+
+        // 3. Si pasa todas las validaciones (pero NO genero el certificado aún)
+        res.json({
             success: true,
-            certificate,
+            message: "Estudiante cumple con todos los requisitos para generar certificado",
+            action: "generate",
+            student: {
+                id: student.dataValues.id,
+                name: student.dataValues.user?.name,
+                lastname: student.dataValues.user?.lastname,
+                dni: student.dataValues.user?.dni
+            },
+            course: {
+                id: course.dataValues.id,
+                title: course.dataValues.title
+            },
+            requirements: {
+                enrolled: true,
+                approved: true,
+                attendance: attendance
+            }
         });
+
     } catch (error) {
-        console.error(error);
+        console.error('[Check Certificate Error]', error);
         res.status(500).json({
             success: false,
-            message: 'Ocurrió un error en el servidor.',
+            error: "Error al verificar certificado",
+            code: "SERVER_ERROR",
+            details: error instanceof Error ? error.message : 'Error desconocido'
         });
     }
 };
 
 
 
-function accessAsync(path: path.PlatformPath) {
-    throw new Error("Function not implemented.");
-}
+
 

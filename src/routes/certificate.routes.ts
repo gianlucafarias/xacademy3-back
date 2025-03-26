@@ -11,7 +11,7 @@ router.get('/download/:id', downloadCertificate as RequestHandler);
 router.get('/student/:student_id', getCerticateById as RequestHandler);
 
 //chequea el certificado
-router.get('/check/:studen_id/:course_id', checkAndGenerateCertificates as RequestHandler);
+router.get('/check/:student_id/:course_id', checkAndGenerateCertificates as RequestHandler);
 
 
 export default router;
