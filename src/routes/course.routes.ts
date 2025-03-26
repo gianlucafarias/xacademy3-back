@@ -1,6 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { createCourse, createCourseCategory, editCourseCategory, getActiveCoursesCount, getAllActiveCourses, getAllCourseCategories, getAllCourses, getCourseByCategory, getCourseById, getCoursesByCategory, getCoursesBySearch, getCoursesCount, getFilteredCourses, updateCourse, getCategoryById, changeCourseActive, lastestCourses, getOrderedCourses } from '../controllers/course.controller';
 
+
 const router = Router();
 
 router.post('/create', createCourse as RequestHandler);
@@ -22,5 +23,6 @@ router.get('/categories/view/:id', getCategoryById as RequestHandler);
 router.put('/active/:id', changeCourseActive as RequestHandler);
 router.get('/lastest', lastestCourses as RequestHandler);
 router.get('/ordered', getOrderedCourses as RequestHandler);
+
 export default router;
 

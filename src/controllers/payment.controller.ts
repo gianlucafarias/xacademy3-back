@@ -334,4 +334,3 @@ function isValidColumn(column: string): boolean {
   ];
   return allowedColumns.includes(column);
 }
-

@@ -3,6 +3,7 @@ import { createNews, getAllNews, getNewsById, updateNews, deleteNews, getOrdered
 
 
 
+
 const router = Router();
 
 router.post('/', createNews as RequestHandler);
@@ -11,6 +12,7 @@ router.get('/view/:id', getNewsById as RequestHandler);
 router.put('/:id', updateNews as RequestHandler);
 router.delete('/:id', deleteNews as RequestHandler);
 router.get('/ordered', getOrderedNews as RequestHandler);
+
 
 export default router;
 

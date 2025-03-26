@@ -5,6 +5,7 @@ import { Op } from 'sequelize';
 import Teacher from '../models/Teacher';
 import User from '../models/User';
 
+
 export const createCourse = async (req: Request, res: Response) => {
   const { 
     title, 
@@ -489,3 +490,15 @@ function isValidColumn(column: string): boolean {
   ];
   return allowedColumns.includes(column);
 }
+
+
+
+
+
+
+
+
+
+
+
+
