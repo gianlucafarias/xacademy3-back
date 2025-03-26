@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import  Courses  from '../models/Courses';
 import CoursesCategory from '../models/CoursesCategory';
 import { Op } from 'sequelize';
+import Teacher from '../models/Teacher';
+import User from '../models/User';
+
 
 export const createCourse = async (req: Request, res: Response) => {
   const { 
@@ -384,6 +387,104 @@ export const lastestCourses = async (req: Request, res: Response)=>{
   }
 }
 
+
+/**
+ * Ordenar cursos por columna
+ * @param req 
+ * @param res
+ */
+export const getOrderedCourses = async (req: Request, res: Response) => {
+  try {
+    const { column, direction, page = 1, limit = 10 } = req.query;
+
+    let orderClause: any = [['id', 'ASC']]; // Orden predeterminado
+    const offset = (Number(page) - 1) * Number(limit);
+
+    if (column && typeof column === 'string') {
+      const dir = direction && (direction as string).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+      
+      if (column === 'teacher') {
+        orderClause = [[
+          { model: Teacher, as: 'teacher' }, 
+          { model: User, as: 'user' }, 
+          'name', 
+          dir
+        ]];
+      } 
+      else if (column === 'category') {
+        orderClause = [[
+          { model: CoursesCategory, as: 'courses_category' }, 
+          'title', 
+          dir
+        ]];
+      }
+      else if (isValidColumn(column)) {
+        orderClause = [[column, dir]];
+      }
+    }
+
+    const { count, rows } = await Courses.findAndCountAll({
+      order: orderClause,
+      limit: Number(limit),
+      offset: offset,
+      include: [
+        {
+          model: Teacher,
+          as: 'teacher',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['name', 'lastname', 'email']
+            }
+          ]
+        },
+        {
+          model: CoursesCategory,
+          as: 'courses_category',
+          attributes: ['id', 'title']
+        }
+      ]
+    });
+
+    res.status(200).json({
+      courses: rows,
+      totalItems: count,
+      currentPage: Number(page),
+      totalPages: Math.ceil(count / Number(limit)),
+      hasNextPage: Number(page) < Math.ceil(count / Number(limit)),
+      hasPreviousPage: Number(page) > 1
+    });
+
+  } catch (error) {
+    console.error('Error al obtener cursos ordenados:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    res.status(500).json({ 
+      error: 'Error al obtener los cursos ordenados',
+      details: errorMessage
+    });
+  }
+};
+
+// Función auxiliar para validar columnas permitidas
+function isValidColumn(column: string): boolean {
+  const allowedColumns = [
+    'id', 
+    'title', 
+    'description', 
+    'price', 
+    'quota', 
+    'category_id', 
+    'teacher_id', 
+    'hours',
+    'startDate',
+    'endDate',
+    'createdAt',
+    'updatedAt',
+    'isActive'
+  ];
+  return allowedColumns.includes(column);
+}
 
 
 

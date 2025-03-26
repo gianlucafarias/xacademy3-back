@@ -120,7 +120,43 @@ export const deleteNews = async (req: Request, res: Response) => {
     }
 }
 
+export const getOrderedNews = async (req: Request, res: Response) => {
+    try {
+        const { column, direction, page = 1, limit = 10 } = req.query;
 
+        let orderClause: any = [['id', 'ASC']]; // Orden predeterminado
+        const offset = (Number(page) - 1) * Number(limit);
 
+        if (column && typeof column === 'string') {
+            const dir = direction && (direction as string).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
+            if (isValidColumn(column)) {
+                orderClause = [[column, dir]];
+            }
+        }
+
+        const { count, rows } = await News.findAndCountAll({
+            order: orderClause, 
+            limit: Number(limit),
+            offset: offset 
+        });
+
+        const news = rows.map(news => news.dataValues);
+
+        res.status(200).json({
+            news,   
+            total: count,
+            page: Number(page),
+            limit: Number(limit)
+        });
+    } catch (error) {
+        console.error('Error al obtener noticias ordenadas:', error);   
+        res.status(500).json({ error: 'Error al obtener las noticias ordenadas' });
+    }
+}
+
+function isValidColumn(column: string): boolean {
+    const allowedColumns = ['id', 'title', 'date'];
+    return allowedColumns.includes(column);
+}
 
