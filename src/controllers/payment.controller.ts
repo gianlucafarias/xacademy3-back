@@ -11,7 +11,6 @@ export const getAllPayments = async (req: Request, res: Response) => {
       const payments = await Payment.findAll();
       res.status(200).json(payments);
     } catch (error) { 
-      console.log(error)
       res.status(500).json({ error: 'Error al obtener todos los pagos' });
     }
   }

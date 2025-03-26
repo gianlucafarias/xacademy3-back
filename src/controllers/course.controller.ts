@@ -37,7 +37,6 @@ export const createCourse = async (req: Request, res: Response) => {
     }else if(new Date(endDate) < today){
       status = 'FINALIZADO';
     }
-    console.log(status);
 
     // Crear el curso
     const course = await Courses.create({ 
@@ -57,7 +56,6 @@ export const createCourse = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({ message: 'Curso creado con éxito', course });
-    console.log(course);
   } catch (error) {
     console.error('Error al crear el curso:', error);
     res.status(500).json({ error: 'Error al crear el curso' });
@@ -83,7 +81,6 @@ export const updateCourseStatus = async () => {
       { where: { endDate: { [Op.lt]: today }, status: "ACTIVO" } }
     );
 
-    console.log("Estados de cursos actualizados correctamente");
   } catch (error) {
     console.error("Error al actualizar el estado de los cursos:", error);
   }
@@ -95,7 +92,6 @@ export const getAllCourses = async (req: Request, res: Response) => {
     const courses = await Courses.findAll();
     res.status(200).json(courses);
   } catch (error) { 
-    console.log(error)
     res.status(500).json({ error: 'Error al obtener los cursos' });
   }
 }
@@ -150,7 +146,6 @@ export const updateCourse = async (req: Request, res: Response) => {
     teacher_id,
     category_id
   } = req.body;
-  console.log('Recibiendo image_url:', image_url);
 
   try {
     // Buscar si el curso existe
@@ -363,7 +358,7 @@ export const findCourseById = async (courseId: number) => {
 export const changeCourseActive = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { isActive } = req.body;
-  console.log(req.body);
+
   try {
     const course = await Courses.findByPk(id);
     if (!course) {

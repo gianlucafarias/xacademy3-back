@@ -107,9 +107,7 @@ export const generateCertificate = async (req: Request, res: Response) => {
         const existingCertificate = await isCertificateAlreadyIssued(student_id, course_id);
 
         if (existingCertificate) {
-            console.log('existe', existingCertificate);
             if (existingCertificate.dataValues.file_path) {
-                console.log("Ruta del archivo existente:", existingCertificate.dataValues.file_path);
                 if (fs.existsSync(existingCertificate.dataValues.file_path)) {
                     return res.download(existingCertificate.dataValues.file_path);
                 } else {
@@ -120,7 +118,6 @@ export const generateCertificate = async (req: Request, res: Response) => {
         }
         // Verificar que el alumno exista
         const student = await getStudentWithUser(student_id);
-        console.log("Datos completos del estudiante:", student);
 
         if (!student) {
             return res.status(404).json({ error: 'El estudiante no existe en la base de datos' });

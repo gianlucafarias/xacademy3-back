@@ -61,7 +61,6 @@ export const getAllAssistByIdStudent = async (req: Request, res: Response) => {
 export const registerAttendance = async (req: Request, res: Response) => {
     try {
         const { class_id, student_id, attendance } = req.body;
-        console.log(req.body);
         
         //Verifica si la clase existe
         const classExists = await findClassById(class_id);
@@ -77,7 +76,6 @@ export const registerAttendance = async (req: Request, res: Response) => {
         
         //verifico si el estudiante esta en el curso
         const enrollment = await findEnrollment(student_id);
-        console.log(enrollment);
         if(!enrollment){
             return res.status(400).json({message:"El estudiante no está inscrito en el curso de esta clase "});
         }

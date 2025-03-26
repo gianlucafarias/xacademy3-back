@@ -39,7 +39,6 @@ app.use('/api/news', newsRoutes);
 
 // **Tarea programada con node-cron**
 cron.schedule("0 0 * * *", async () => {
-    console.log("Ejecutando actualización de estado de cursos...");
     await updateCourseStatus();
   });
 app.get('/', (req, res) => {

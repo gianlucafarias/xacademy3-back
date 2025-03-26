@@ -18,7 +18,6 @@ export const getAllInscriptions = async (req: Request, res: Response) => {
       const inscriptions = await Inscription.findAll();
       res.status(200).json(inscriptions);
     } catch (error) { 
-      console.log(error)
       res.status(500).json({ error: 'Error las incripciones' });
     }
   }

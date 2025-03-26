@@ -11,7 +11,6 @@ interface NewsAttributes {
 
 export const createNews = async (req: Request, res: Response) => {
     const { title, description, image, user_id } = req.body;
-    console.log(req.body);
     if (!title || !description || !image || !user_id) {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
