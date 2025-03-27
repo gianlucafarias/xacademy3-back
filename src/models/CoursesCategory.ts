@@ -1,12 +1,11 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/dbConfig");
-import Courses from "./Courses";
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../config/dbConfig";
 
 const CoursesCategory = sequelize.define(
   "CoursesCategory",
   {
     id: {
-      type: DataTypes.INTEGER(100),
+      type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
@@ -14,17 +13,12 @@ const CoursesCategory = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    course_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      reference: {
-        Courses,
-        key: "id",
-      },
-      onDelete: "CASCADE",
-    },
   },
   {
     tableName: "courses_category",
+    timestamps: false,
   }
 );
+
+
+export default CoursesCategory;
